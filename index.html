@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annoy Your Friend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #2b2141;
+  --ink-soft: #5b5170;
+  --bg: #ffd9e8;
+  --bg-dot: #ffbdd6;
+  --card: #ffffff;
+  --pink: #ff5d8f;
+  --pink-dark: #e03e72;
+  --teal: #2ec4b6;
+  --yellow: #ffd23f;
+  --purple: #7b5cff;
+  --green: #3ddc84;
+  --gold: #ffb800;
+  --shirt: #4d8dff;
+  --shirt-dark: #3069d6;
+  --shirt-mid: #3d7af0;
+  --skin: #f7cfa4;
+ 
+  --hair: #5a3825;
+  --radius: 20px;
+  --shadow: 5px 5px 0 var(--ink);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  font-family: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--bg-dot) 2.5px, transparent 2.5px);
+  background-size: 26px 26px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { font-family: inherit; color: inherit; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px;
+  background: var(--yellow);
+  border-bottom: 4px solid var(--ink);
+  height: 64px;
+}
+.logo { font-size: 1.6rem; font-weight: 700; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logo .js-name { color: var(--pink-dark); }
+.tagline { font-weight: 500; color: var(--ink-soft); font-size: .95rem; text-align: right; }
+
+/* ---------- Layout ---------- */
+.app {
+  display: grid;
+  grid-template-columns: minmax(330px, 1.15fr) minmax(280px, .9fr) minmax(340px, 1.1fr);
+  gap: 18px;
+  padding: 18px;
+  height: calc(100vh - 64px);
+}
+.col { overflow-y: auto; overflow-x: hidden; padding: 4px 10px 14px 4px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.col::-webkit-scrollbar { width: 10px; }
+.col::-webkit-scrollbar-thumb { background: var(--ink); border-radius: 10px; border: 3px solid var(--bg); }
+
+.card {
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.card h2 {
+  margin: 0 0 12px; font-size: 1.25rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.card h2 small { font-size: .85rem; font-weight: 500; color: var(--ink-soft); }
+
+/* ---------- Counter ---------- */
+.counter-card { text-align: center; background: linear-gradient(180deg, #fff 0%, #fff6d6 100%); }
+.counter-label { font-weight: 600; font-size: 1.1rem; color: var(--ink-soft); }
+.counter { font-size: clamp(2rem, 4.2vw, 3rem); font-weight: 700; line-height: 1.1; margin: 4px 0 8px; word-break: break-word; }
+.rates { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-weight: 500; }
+.rates b { color: var(--pink-dark); }
+.frenzy {
+  margin-top: 10px; padding: 8px 12px; border-radius: 14px;
+  background: var(--gold); border: 3px solid var(--ink); font-weight: 700;
+  animation: frenzyPulse .6s ease-in-out infinite alternate;
+}
+@keyframes frenzyPulse { from { transform: scale(1); } to { transform: scale(1.03); background: #ffe270; } }
+
+/* ---------- Character ---------- */
+.stage-area { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 30px; }
+.char-btn {
+  position: relative;
+  width: min(340px, 82vw);
+  aspect-ratio: 300 / 380;
+  background: none; border: none; padding: 0;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><text y='30' font-size='30'>👆</text></svg>") 14 2, pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform .15s;
+  filter: drop-shadow(6px 6px 0 rgba(43,33,65,.25));
+}
+.char-btn:hover { transform: scale(1.02) rotate(-.5deg); }
+.char-btn:focus-visible { outline: 4px dashed var(--purple); outline-offset: 6px; border-radius: 30px; }
+.char-btn.flinch { animation: flinch .28s ease-out; }
+@keyframes flinch {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.08, .9) translateX(-7px) rotate(-3deg); }
+  45% { transform: scale(.95, 1.06) translateX(6px) rotate(2deg); }
+  70% { transform: scale(1.02, .98) translateX(-2px); }
+  100% { transform: none; }
+}
+.char-svg { width: 100%; height: 100%; overflow: visible; display: block; }
+
+/* stage-driven face variables (shy escalation) */
+#char { --bl: -6deg; --br: 6deg; --by: -1px; --lid: -7px; --pupil: 1; --px: -3px; --py: 2px; --face: var(--skin); --tint: 0; --blush: .18; }
+#char[data-stage="1"] { --bl: -10deg; --br: 10deg; --by: -3px; --lid: -5px; --px: 5px; --py: 3px; --tint: .07; --blush: .45; }
+#char[data-stage="2"] { --bl: -14deg; --br: 14deg; --by: -4px; --lid: -3px; --pupil: .9; --px: 6px; --py: 4px; --tint: .13; --blush: .6; }
+#char[data-stage="3"] { --bl: -16deg; --br: 16deg; --by: -5px; --tint: .19; --blush: .72; }
+#char[data-stage="4"] { --bl: -18deg; --br: 18deg; --by: -6px; --tint: .25; --blush: .8; }
+#char[data-stage="5"] { --bl: -20deg; --br: 20deg; --by: -7px; --lid: -9px; --pupil: .8; --px: 0px; --py: 1px; --tint: .3; --blush: .85; }
+
+.face { fill: var(--face); transition: fill .6s; }
+.skin { fill: var(--skin); }
+.line { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.hair { fill: var(--hair); }
+.shirt { fill: var(--shirt); }
+.arm-back { fill: var(--shirt-dark); }
+.arm-front { fill: var(--shirt-mid); }
+.shirt-text { fill: #fff; font: 700 15px 'Fredoka', sans-serif; letter-spacing: 1.5px; text-anchor: middle; }
+.brow { fill: none; stroke: var(--hair); stroke-width: 8; stroke-linecap: round; transform-box: fill-box; transform-origin: center; transition: transform .4s; }
+.brow-l { transform: translateY(var(--by)) rotate(var(--bl)); }
+.brow-r { transform: translateY(var(--by)) rotate(var(--br)); }
+.eye-white { fill: #fff; }
+.pupil { fill: var(--ink); transform-box: fill-box; transform-origin: center; transform: translate(var(--px), var(--py)) scale(var(--pupil)); transition: transform .4s; }
+.lid { stroke: var(--ink); stroke-width: 4; transform: translateY(var(--lid)); transition: transform .4s, fill .6s; }
+.eye-outline { fill: none; }
+.blush { fill: #ff6f91; opacity: var(--blush); transition: opacity .6s; }
+.blush-lines { fill: none; stroke: #e0446a; stroke-width: 3; stroke-linecap: round; opacity: 0; transition: opacity .4s; }
+.s2 .blush-lines { opacity: 1; }
+.photo-tint { fill: #ff6f91; opacity: var(--tint); mix-blend-mode: multiply; transition: opacity .6s; }
+.lid-tint { fill: #ff6f91; opacity: var(--tint); mix-blend-mode: multiply; transform: translateY(var(--lid)); transition: transform .4s, opacity .6s; }
+.stubble { fill: var(--hair); opacity: .3; }
+.shine { fill: #fff; opacity: .35; }
+
+.mouth { display: none; }
+#char[data-stage="0"] .m0, #char[data-stage="1"] .m1, #char[data-stage="2"] .m2,
+#char[data-stage="3"] .m3, #char[data-stage="4"] .m4, #char[data-stage="5"] .m3 { display: inline; }
+.eyes-closed { display: none; }
+#char[data-stage="3"] .eyes-closed, #char[data-stage="4"] .eyes-closed { display: inline; }
+#char[data-stage="3"] .eyes-open, #char[data-stage="4"] .eyes-open { display: none; }
+
+/* photo mode: hide the drawn face, keep the shy overlays */
+.photo-head { display: none; }
+#char.has-photo .photo-head { display: inline; }
+#char.has-photo .drawn { display: none; }
+
+/* embarrassed steam (stage 3+) */
+.steam { opacity: 0; transition: opacity .5s; }
+.s3 .steam { opacity: 1; }
+.puff { fill: #ffd3de; stroke: var(--ink); stroke-width: 3; transform-box: fill-box; transform-origin: center; }
+.steam-l .puff { animation: puffL 1.4s ease-out infinite; }
+.steam-r .puff { animation: puffR 1.4s ease-out infinite; }
+.puff.p2 { animation-delay: .45s !important; }
+.puff.p3 { animation-delay: .9s !important; }
+@keyframes puffL { 0% { transform: translate(0,0) scale(.3); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(-16px,-52px) scale(1.4); opacity: 0; } }
+@keyframes puffR { 0% { transform: translate(0,0) scale(.3); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(16px,-52px) scale(1.4); opacity: 0; } }
+
+.sweat { opacity: 0; transform-box: fill-box; }
+.s3 .sweat { animation: drip 1.8s ease-in infinite; }
+@keyframes drip { 0% { opacity: 0; transform: translateY(-4px); } 15% { opacity: 1; } 80% { opacity: 1; transform: translateY(8px); } 100% { opacity: 0; transform: translateY(14px); } }
+
+.heart { fill: #ff4f81; stroke: var(--ink); stroke-width: 1.5; font: 700 24px 'Fredoka', sans-serif; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.s4 .heart { animation: heartUp 2.1s ease-out infinite; }
+.heart.h2 { animation-delay: .7s !important; }
+.heart.h3 { animation-delay: 1.4s !important; }
+@keyframes heartUp { 0% { transform: translateY(0) scale(.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-46px) scale(1.2) rotate(12deg); opacity: 0; } }
+
+/* stage 5: hands up, hiding behind them */
+.arms-up { display: none; }
+.s5 .arms-up { display: inline; }
+.s5 .arms-crossed { display: none; }
+.sleeve-outline { fill: none; stroke: var(--ink); stroke-width: 40; stroke-linecap: round; }
+.sleeve { fill: none; stroke: var(--shirt-mid); stroke-width: 32; stroke-linecap: round; }
+
+.s4 .char-svg { animation: sway 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg) translateY(2px); } }
+.s5 .char-svg { animation: tremble .18s linear infinite; }
+@keyframes tremble { 25% { transform: translate(-1px, 0); } 75% { transform: translate(1px, 0); } }
+
+.mood {
+  background: #fff; border: 3px solid var(--ink); border-radius: 999px;
+  padding: 6px 16px; font-weight: 600; box-shadow: 3px 3px 0 var(--ink);
+  text-align: center;
+}
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.name-tag {
+  background: var(--purple); color: #fff; border: 3px solid var(--ink); border-radius: 999px;
+  padding: 4px 14px; font-weight: 600; cursor: pointer; box-shadow: 3px 3px 0 var(--ink);
+  transition: transform .12s, box-shadow .12s;
+}
+.name-tag:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+.name-tag.alt { background: var(--teal); }
+.name-tag.plain { background: #fff; color: var(--ink); }
+.hint { font-size: .9rem; color: var(--ink-soft); font-weight: 500; text-align: center; }
+
+/* Dosa + egg props beside the character */
+.char-wrap { position: relative; }
+.prop {
+  position: absolute; bottom: 0; width: 32%; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  transition: filter .4s, opacity .4s, transform .15s;
+  filter: drop-shadow(3px 3px 0 rgba(43,33,65,.25));
+}
+.prop svg { width: 100%; display: block; }
+.prop-dosa { left: -3%; }
+.prop-egg { right: -3%; }
+.prop:hover:not(.locked):not(.cooling) { transform: scale(1.08) rotate(-3deg); }
+.prop.locked { filter: grayscale(1); opacity: .4; pointer-events: none; }
+.prop.cooling { opacity: .65; cursor: wait; }
+.prop.ready .prop-tag { background: var(--yellow); animation: frenzyPulse .6s ease-in-out infinite alternate; }
+.prop-tag {
+  font-size: .72rem; font-weight: 700; background: #fff; border: 2px solid var(--ink);
+  border-radius: 999px; padding: 1px 8px; margin-top: -4px; white-space: nowrap;
+}
+.prop.prop-pop { animation: propPop .6s cubic-bezier(.2,1.8,.4,1); }
+.flying-food {
+  position: fixed; z-index: 55; pointer-events: none; font-size: 2.4rem;
+  transform: translate(-50%, -50%);
+  transition: left .48s cubic-bezier(.3,0,.6,1), top .48s cubic-bezier(.2,-.8,.7,1), transform .48s;
+}
+.stuffed { display: none; }
+#char.stuffed-dosa .stuffed-dosa-g, #char.stuffed-egg .stuffed-egg-g { display: inline; }
+#char.stuffed-dosa .mouth, #char.stuffed-egg .mouth { display: none !important; }
+#char.stuffed-dosa .char-svg, #char.stuffed-egg .char-svg { animation: chew .28s ease-in-out 6; }
+@keyframes chew { 50% { transform: scale(1.03, .96); } }
+/* Egg rain */
+.rain-layer { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.rain-egg {
+  position: absolute; top: -30%; font-size: 1.9rem; transform: translate(-50%, -50%);
+  animation: eggFall var(--dur) cubic-bezier(.45,0,.9,.6) forwards;
+}
+.rain-egg.miss { animation-name: eggFallMiss; }
+@keyframes eggFall { to { top: var(--land); transform: translate(-50%, -50%) rotate(var(--spin)); } }
+@keyframes eggFallMiss { 85% { opacity: 1; } to { top: 100%; transform: translate(-50%, -50%) rotate(var(--spin)); opacity: 0; } }
+.egg-splat { position: absolute; font-size: 2.3rem; transform: translate(-50%, -50%); animation: splat .9s ease-out forwards; }
+@keyframes splat {
+  0% { transform: translate(-50%, -50%) scale(.3); }
+  25% { transform: translate(-50%, -50%) scale(1.3, .75); }
+  70% { opacity: 1; }
+  100% { transform: translate(-50%, -25%) scale(1, .9); opacity: 0; }
+}
+@keyframes propPop { 0% { transform: scale(.2) rotate(-20deg); } 100% { transform: scale(1); } }
+
+/* Customizer */
+.customize { width: 100%; }
+.customize summary { font-weight: 700; font-size: 1.15rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.customize summary::-webkit-details-marker { display: none; }
+.customize summary::after { content: '▾'; transition: transform .2s; }
+.customize[open] summary::after { transform: rotate(180deg); }
+.customize[open] summary { margin-bottom: 12px; }
+.cz-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.btn.small { padding: 5px 10px; font-size: .85rem; border-radius: 10px; }
+.cz-row { margin-bottom: 10px; }
+.cz-label { font-weight: 600; font-size: .9rem; margin-bottom: 4px; color: var(--ink-soft); }
+.cz-opts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--ink); cursor: pointer; padding: 0; transition: transform .1s; }
+.swatch:hover { transform: scale(1.12); }
+.swatch.on, .swatch-custom.on { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--purple); }
+.swatch-custom { width: 32px; height: 32px; border: none; border-radius: 8px; padding: 0; background: none; cursor: pointer; }
+.chip { border: 3px solid var(--ink); border-radius: 999px; background: #fff; padding: 3px 11px; font-weight: 600; font-size: .85rem; cursor: pointer; transition: background .15s; }
+.chip:hover { background: #fff4c2; }
+.chip.on { background: var(--ink); color: #fff; }
+.cz-text { font: inherit; font-weight: 600; border: 3px solid var(--ink); border-radius: 10px; padding: 5px 10px; width: 100%; text-transform: uppercase; }
+
+/* Photo cropper */
+.crop-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.crop-view {
+  position: relative; width: 258px; height: 276px; border-radius: 50%; overflow: hidden;
+  border: 4px solid var(--ink); background: #eee; touch-action: none; cursor: grab; user-select: none;
+}
+.crop-view:active { cursor: grabbing; }
+.crop-view img { position: absolute; left: 0; top: 0; max-width: none; pointer-events: none; }
+.crop-guide { position: absolute; left: 12%; right: 12%; border-top: 2px dashed #fff; filter: drop-shadow(0 1px 1px rgba(0,0,0,.7)); pointer-events: none; }
+.crop-guide span { position: absolute; right: -4px; top: -18px; font-size: .72rem; font-weight: 700; color: #fff; }
+.crop-zoom { width: 100%; accent-color: var(--purple); }
+
+/* Speech bubbles */
+.bubble {
+  position: absolute; top: 0; z-index: 5;
+  background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+  padding: 6px 14px; font-weight: 700; font-size: 1.1rem; max-width: 220px; text-align: center;
+  box-shadow: 3px 3px 0 var(--ink);
+  animation: bubbleIn .25s cubic-bezier(.2,1.6,.4,1) both, bubbleOut .3s ease-in 1.5s forwards;
+  pointer-events: none;
+}
+.bubble::after {
+  content: ''; position: absolute; bottom: -13px; left: 26px;
+  border-width: 12px 8px 0 8px; border-style: solid; border-color: var(--ink) transparent transparent transparent;
+}
+@keyframes bubbleIn { from { transform: scale(.3) rotate(-8deg); opacity: 0; } to { transform: scale(1) rotate(var(--rot, -3deg)); opacity: 1; } }
+@keyframes bubbleOut { to { opacity: 0; transform: translateY(-10px) scale(.9) rotate(var(--rot, -3deg)); } }
+
+/* Floating numbers */
+.float-num {
+  position: fixed; z-index: 50; pointer-events: none;
+  font-weight: 700; font-size: 1.5rem; color: var(--pink-dark);
+  -webkit-text-stroke: 1px #fff; text-shadow: 2px 2px 0 #fff;
+  animation: floatUp 1s ease-out forwards;
+  white-space: nowrap;
+}
+.float-num.frenzied { color: var(--gold); -webkit-text-stroke: 1px var(--ink); font-size: 1.8rem; }
+@keyframes floatUp {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  15% { opacity: 1; transform: translate(-50%, -90%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -260%) scale(1); }
+}
+
+/* ---------- Stats ---------- */
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; }
+.stats dt { color: var(--ink-soft); font-weight: 500; }
+.stats dd { margin: 0; font-weight: 700; text-align: right; }
+
+/* ---------- Prestige ---------- */
+.prestige-card { background: linear-gradient(180deg, #fff 0%, #efe9ff 100%); }
+.prestige-card p { margin: 0 0 10px; font-size: .95rem; color: var(--ink-soft); }
+.grudge-line { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+.bar { height: 16px; border: 3px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; margin: 6px 0 4px; }
+.bar > div { height: 100%; background: repeating-linear-gradient(45deg, var(--purple), var(--purple) 8px, #9a82ff 8px, #9a82ff 16px); width: 0; transition: width .3s; }
+.bar-label { font-size: .85rem; font-weight: 500; color: var(--ink-soft); margin-bottom: 10px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 3px solid var(--ink); border-radius: 14px;
+  padding: 8px 16px; font-weight: 700; font-size: 1rem;
+  background: var(--teal); color: #fff; cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s, filter .1s;
+}
+.btn:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); filter: brightness(1.05); }
+.btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.6); }
+.btn.purple { background: var(--purple); }
+.btn.pink { background: var(--pink); }
+.btn.ghost { background: #fff; color: var(--ink); }
+.btn.block { width: 100%; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Achievements ---------- */
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.ach {
+  border: 3px solid var(--ink); border-radius: 14px; padding: 8px 4px; text-align: center;
+  background: #fff7d1; font-size: .72rem; font-weight: 600; line-height: 1.15;
+  transition: transform .12s; cursor: help; min-height: 78px;
+}
+.ach:hover { transform: translateY(-2px) rotate(-1deg); }
+.ach .ae { display: block; font-size: 1.6rem; margin-bottom: 4px; }
+.ach.locked { background: #eee; color: #999; border-color: #bbb; }
+.ach.locked .ae { filter: grayscale(1) opacity(.5); }
+.ach-detail { margin-top: 10px; font-size: .9rem; min-height: 1.3em; color: var(--ink-soft); font-weight: 500; }
+
+/* ---------- Shop ---------- */
+.shop-section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; font-size: 1.15rem; }
+.upg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.upg {
+  text-align: left; border: 3px solid var(--ink); border-radius: 14px; padding: 8px 10px;
+  background: #e9fbf8; cursor: pointer; box-shadow: 3px 3px 0 var(--ink);
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center;
+  transition: transform .1s, box-shadow .1s, background .2s;
+}
+.upg:hover:not(.cant) { transform: translate(-1px,-2px) rotate(-.5deg); box-shadow: 4px 5px 0 var(--ink); background: #d3f7f1; }
+.upg .ue { font-size: 1.7rem; grid-row: span 2; }
+.upg .un { font-weight: 700; font-size: .92rem; line-height: 1.1; }
+.upg .uc { font-weight: 600; font-size: .85rem; color: var(--pink-dark); }
+.upg .ud { grid-column: 1 / -1; font-size: .78rem; color: var(--ink-soft); font-weight: 500; line-height: 1.2; }
+.empty { color: var(--ink-soft); font-weight: 500; font-size: .92rem; padding: 6px 2px; }
+
+.amt-toggle { display: inline-flex; border: 3px solid var(--ink); border-radius: 12px; overflow: hidden; }
+.amt-toggle button { border: none; background: #fff; padding: 3px 10px; font-weight: 700; cursor: pointer; font-size: .9rem; }
+.amt-toggle button + button { border-left: 3px solid var(--ink); }
+.amt-toggle button.on { background: var(--ink); color: #fff; }
+
+.bld-list { display: flex; flex-direction: column; gap: 10px; }
+.bld {
+  display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px;
+  text-align: left; width: 100%;
+  border: 3px solid var(--ink); border-radius: 16px; padding: 10px 12px;
+  background: #fff; cursor: pointer; box-shadow: 3px 3px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s, background .2s;
+}
+.bld:hover:not(.cant) { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--ink); background: #fff4c2; }
+.bld:active:not(.cant) { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.bld-icon { font-size: 2.2rem; text-align: center; }
+.bld-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.bld-name { font-weight: 700; font-size: 1.08rem; }
+.bld-desc { font-size: .8rem; color: var(--ink-soft); font-weight: 500; font-style: italic; }
+.bld-meta { font-size: .85rem; font-weight: 600; display: flex; gap: 4px 10px; flex-wrap: wrap; margin-top: 2px; }
+.bld-cost { color: var(--pink-dark); }
+.bld-rate { color: var(--teal); filter: brightness(.8); }
+.bld-owned { font-size: 2rem; font-weight: 700; color: rgba(43,33,65,.35); min-width: 44px; text-align: right; }
+
+.cant { opacity: .5; filter: grayscale(.7); cursor: not-allowed; }
+.pop { animation: pop .35s cubic-bezier(.2,1.8,.4,1); }
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.06) rotate(-1deg); background: #c9ffe0; } 100% { transform: scale(1); } }
+.nope { animation: nope .3s; }
+@keyframes nope { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+.new-unlock { animation: unlockIn .5s cubic-bezier(.2,1.6,.4,1); }
+@keyframes unlockIn { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ---------- Golden moment ---------- */
+.golden {
+  position: fixed; z-index: 40;
+  border: 4px solid var(--ink); border-radius: 22px;
+  background: radial-gradient(circle at 30% 30%, #fff6b0, var(--gold));
+  padding: 10px 16px; font-weight: 700; font-size: 1rem; cursor: pointer;
+  box-shadow: 0 0 0 6px rgba(255,210,63,.5), 4px 4px 0 var(--ink);
+  animation: goldIn .4s cubic-bezier(.2,1.7,.4,1), goldBob 1.2s ease-in-out .4s infinite;
+  max-width: 230px; text-align: center;
+}
+.golden small { display: block; font-weight: 500; font-size: .78rem; }
+.golden.leaving { animation: goldOut .4s ease-in forwards; }
+@keyframes goldIn { from { transform: scale(0) rotate(-20deg); } to { transform: scale(1); } }
+@keyframes goldBob { 0%, 100% { transform: translateY(0) rotate(-2deg); box-shadow: 0 0 0 6px rgba(255,210,63,.5), 4px 4px 0 var(--ink); } 50% { transform: translateY(-6px) rotate(2deg); box-shadow: 0 0 0 14px rgba(255,210,63,.25), 4px 4px 0 var(--ink); } }
+@keyframes goldOut { to { transform: scale(0) rotate(20deg); opacity: 0; } }
+
+/* ---------- Toasts ---------- */
+#toasts { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; pointer-events: none; max-width: calc(100vw - 32px); }
+.toast {
+  display: flex; gap: 10px; align-items: center;
+  background: #fff; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink);
+  padding: 10px 14px; min-width: 240px; max-width: 340px;
+  animation: toastIn .35s cubic-bezier(.2,1.5,.4,1);
+}
+.toast.ach-toast { background: #fff7d1; }
+.toast.gold-toast { background: #fff0a8; }
+.toast .te { font-size: 1.8rem; }
+.toast .tt { font-weight: 700; }
+.toast .tb { font-size: .85rem; color: var(--ink-soft); font-weight: 500; }
+.toast.out { animation: toastOut .3s ease-in forwards; }
+@keyframes toastIn { from { transform: translateX(120%); } to { transform: none; } }
+@keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 80; background: rgba(43,33,65,.55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: fadeIn .2s;
+}
+.modal {
+  background: #fff; border: 4px solid var(--ink); border-radius: 24px; box-shadow: 6px 6px 0 var(--ink);
+  padding: 22px; width: min(440px, 100%);
+  animation: modalIn .3s cubic-bezier(.2,1.5,.4,1);
+}
+.modal h3 { margin: 0 0 10px; font-size: 1.5rem; }
+.modal .mbody { margin-bottom: 18px; font-weight: 500; line-height: 1.4; }
+.modal .mbody b { color: var(--pink-dark); }
+.modal input[type=text] {
+  width: 100%; font: inherit; font-size: 1.1rem; font-weight: 600; padding: 8px 12px;
+  border: 3px solid var(--ink); border-radius: 12px; margin-top: 8px;
+}
+.modal .btn-row { justify-content: flex-end; }
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes modalIn { from { transform: scale(.7) rotate(-3deg); opacity: 0; } }
+
+/* Screen shake */
+.shake { animation: screenshake .5s; }
+@keyframes screenshake {
+  10%, 90% { transform: translate(-2px, 1px); }
+  20%, 80% { transform: translate(4px, -2px); }
+  30%, 50%, 70% { transform: translate(-6px, 3px) rotate(-.4deg); }
+  40%, 60% { transform: translate(6px, -3px) rotate(.4deg); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1000px) {
+  .app { grid-template-columns: 1fr; height: auto; padding: 12px 16px 24px; }
+  .col { overflow: visible; padding: 0; }
+  .col-right { order: 2; }
+  .col-mid { order: 3; }
+  .topbar { height: auto; flex-direction: column; align-items: flex-start; gap: 0; padding: 8px 16px; }
+  .tagline { text-align: left; font-size: .85rem; }
+  .logo { font-size: 1.35rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shake, .s5 .char-svg, .frenzy, .golden { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">😤 Annoy <span class="js-name">Greg</span></div>
+  <div class="tagline">An idle game about personal space (and violating it)</div>
+</header>
+
+<main class="app" id="app">
+  <!-- LEFT: character + counter -->
+  <section class="col col-left">
+    <div class="card counter-card">
+      <div class="counter-label">😤 Annoyance</div>
+      <div class="counter" id="count">0</div>
+      <div class="rates">
+        <span>per second: <b id="aps">0</b></span>
+        <span>per poke: <b id="ppc">1</b></span>
+      </div>
+      <div class="frenzy" id="frenzy" hidden></div>
+    </div>
+
+    <div class="stage-area" id="stageArea">
+      <div class="char-wrap">
+      <div class="rain-layer" id="rainLayer" aria-hidden="true"></div>
+      <button type="button" class="prop prop-dosa locked" id="propDosa" data-feed="dosa" aria-label="Force-feed Masala Dosa">
+        <svg viewBox="0 0 130 90" aria-hidden="true">
+          <ellipse cx="65" cy="62" rx="60" ry="20" fill="#fff" stroke="#2b2141" stroke-width="3.5"/>
+          <ellipse cx="65" cy="60" rx="46" ry="13" fill="#f3f0ea"/>
+          <path d="M14 56 C30 30 96 22 118 36 C122 40 120 48 114 50 C92 46 40 52 20 64 C14 66 10 62 14 56 Z" fill="#e9a84a" stroke="#2b2141" stroke-width="3.5" stroke-linejoin="round"/>
+          <ellipse cx="116" cy="43" rx="6" ry="8" fill="#f6c46e" stroke="#2b2141" stroke-width="3"/>
+          <path d="M116 39 q-3 4 0 8" fill="none" stroke="#c97a2a" stroke-width="2"/>
+          <ellipse cx="44" cy="46" rx="5" ry="2.5" fill="#c97a2a" opacity=".7"/>
+          <ellipse cx="70" cy="40" rx="6" ry="2.5" fill="#c97a2a" opacity=".7"/>
+          <ellipse cx="94" cy="38" rx="4" ry="2" fill="#c97a2a" opacity=".7"/>
+          <circle cx="34" cy="70" r="9" fill="#fffdf5" stroke="#2b2141" stroke-width="3"/>
+          <circle cx="58" cy="74" r="9" fill="#f08a2c" stroke="#2b2141" stroke-width="3"/>
+        </svg>
+        <span class="prop-tag">🫓 in shop</span>
+      </button>
+      <button type="button" class="prop prop-egg locked" id="propEgg" data-feed="egg" aria-label="Force-feed Eggs">
+        <svg viewBox="0 0 130 90" aria-hidden="true">
+          <path d="M10 70 C4 56 26 50 40 54 C52 46 74 52 72 64 C80 72 64 84 46 80 C30 86 14 82 10 70 Z" fill="#fff" stroke="#2b2141" stroke-width="3.5" stroke-linejoin="round"/>
+          <circle cx="42" cy="66" r="11" fill="#ffc928" stroke="#2b2141" stroke-width="3"/>
+          <ellipse cx="38" cy="62" rx="3.5" ry="2.5" fill="#fff" opacity=".8"/>
+          <path d="M88 26 C98 26 104 44 104 54 C104 66 97 72 88 72 C79 72 72 66 72 54 C72 44 78 26 88 26 Z" fill="#f1d3ad" stroke="#2b2141" stroke-width="3.5"/>
+          <path d="M112 36 C121 36 126 52 126 60 C126 71 120 76 112 76 C104 76 98 71 98 60 C98 52 103 36 112 36 Z" fill="#fff8ec" stroke="#2b2141" stroke-width="3.5"/>
+          <ellipse cx="83" cy="40" rx="3" ry="6" fill="#fff" opacity=".6"/>
+        </svg>
+        <span class="prop-tag">🥚 in shop</span>
+      </button>
+      <button class="char-btn" id="char" data-stage="0" aria-label="Poke them">
+        <svg class="char-svg" viewBox="0 0 300 380" aria-hidden="true">
+          <defs>
+            <clipPath id="clipEyeL"><ellipse cx="117" cy="152" rx="17" ry="15"/></clipPath>
+            <clipPath id="clipEyeR"><ellipse cx="183" cy="152" rx="17" ry="15"/></clipPath>
+            <clipPath id="clipHead"><ellipse cx="150" cy="150" rx="86" ry="92"/></clipPath>
+            <g id="hand" style="fill: var(--skin)" stroke="#2b2141" stroke-width="3.5">
+              <rect x="-23" y="-30" width="11" height="34" rx="5.5"/>
+              <rect x="-11" y="-35" width="11" height="38" rx="5.5"/>
+              <rect x="1" y="-34" width="11" height="37" rx="5.5"/>
+              <rect x="13" y="-27" width="10" height="31" rx="5"/>
+              <rect x="-25" y="-6" width="50" height="42" rx="18"/>
+            </g>
+          </defs>
+
+          <!-- long hair sits behind the body and head -->
+          <g class="drawn" data-opt="hair:long">
+            <path class="hair line" d="M64 140 C52 60 100 38 150 38 C200 38 248 60 236 140 L246 270 C224 282 196 278 184 262 L116 262 C104 278 76 282 54 270 Z"/>
+          </g>
+
+          <!-- body -->
+          <path class="shirt line" d="M46 382 Q50 268 150 256 Q250 268 254 382 Z"/>
+          <path data-opt="outfit:hoodie" class="arm-back line" d="M90 280 C84 246 118 232 150 232 C182 232 216 246 210 280 C194 264 172 258 150 258 C128 258 106 264 90 280 Z"/>
+          <rect class="skin line" x="128" y="218" width="44" height="46" rx="12"/>
+          <path class="line" fill="none" d="M120 262 Q150 286 180 262"/>
+          <g data-opt="outfit:hoodie">
+            <path d="M139 272 L135 292 M161 272 L165 292" stroke="#2b2141" stroke-width="7" stroke-linecap="round"/>
+            <path d="M139 272 L135 292 M161 272 L165 292" stroke="#f1e6d0" stroke-width="3.5" stroke-linecap="round"/>
+            <g transform="translate(184 280)">
+              <rect x="-9" y="-8" width="18" height="16" rx="2.5" fill="#f2a900" stroke="#2b2141" stroke-width="2.5"/>
+              <path d="M3.5 -3.5 A4.6 4.6 0 1 0 3.5 3.5" fill="none" stroke="#2b2141" stroke-width="2.2" stroke-linecap="round"/>
+            </g>
+            <path d="M88 382 L96 352 Q150 344 204 352 L212 382" fill="none" stroke="#2b2141" stroke-width="3" stroke-linejoin="round"/>
+          </g>
+          <g class="arms-crossed">
+            <rect class="arm-back line" x="70" y="296" width="160" height="38" rx="19"/>
+            <circle class="skin line" cx="222" cy="306" r="14"/>
+            <rect class="arm-front line" x="84" y="314" width="132" height="32" rx="16"/>
+            <circle class="skin line" cx="82" cy="332" r="14"/>
+          </g>
+          <text class="shirt-text" id="shirtText" x="150" y="372">DO NOT TOUCH</text>
+
+          <!-- drawn head -->
+          <g class="drawn">
+            <ellipse class="skin line" cx="66" cy="162" rx="17" ry="23"/>
+            <ellipse class="skin line" cx="234" cy="162" rx="17" ry="23"/>
+            <ellipse class="face line" cx="150" cy="150" rx="86" ry="92"/>
+            <ellipse class="photo-tint" cx="150" cy="150" rx="86" ry="92"/>
+          </g>
+
+          <!-- imported photo head -->
+          <g class="photo-head">
+            <ellipse cx="150" cy="150" rx="86" ry="92" fill="#fff"/>
+            <image id="photoImg" x="64" y="58" width="172" height="184" preserveAspectRatio="xMidYMid slice" clip-path="url(#clipHead)"/>
+            <ellipse class="photo-tint" cx="150" cy="150" rx="86" ry="92"/>
+            <ellipse class="line" fill="none" cx="150" cy="150" rx="86" ry="92"/>
+          </g>
+
+          <!-- drawn features -->
+          <g class="drawn">
+            <!-- hair styles -->
+            <g data-opt="hair:spiky">
+              <path class="hair line" d="M64 142 C54 70 100 44 150 44 C200 44 246 70 236 142 C228 114 214 102 196 104 C202 90 194 80 182 76 C178 92 166 98 150 96 C136 96 126 88 122 76 C110 82 106 94 110 106 C90 100 74 114 64 142 Z"/>
+              <path class="hair line" d="M146 50 Q156 18 178 26 Q162 34 162 50 Z"/>
+            </g>
+            <path data-opt="hair:short" class="hair line" d="M66 132 C60 72 102 50 150 50 C198 50 240 72 234 132 C224 104 192 88 150 88 C108 88 76 104 66 132 Z"/>
+            <g data-opt="hair:curly" class="hair" stroke="#2b2141" stroke-width="3">
+              <circle cx="72" cy="132" r="15"/><circle cx="76" cy="106" r="15"/><circle cx="90" cy="84" r="15"/>
+              <circle cx="110" cy="67" r="15"/><circle cx="134" cy="57" r="15"/><circle cx="160" cy="56" r="15"/>
+              <circle cx="186" cy="63" r="15"/><circle cx="208" cy="80" r="15"/><circle cx="222" cy="104" r="15"/>
+              <circle cx="228" cy="130" r="15"/>
+              <circle cx="102" cy="92" r="14"/><circle cx="126" cy="78" r="14"/><circle cx="152" cy="74" r="14"/>
+              <circle cx="178" cy="78" r="14"/><circle cx="200" cy="94" r="14"/>
+            </g>
+            <path data-opt="hair:long" class="hair line" d="M66 136 C60 70 102 46 150 46 C198 46 240 70 234 136 C222 100 196 82 172 80 C160 96 140 100 120 96 C104 98 80 110 66 136 Z"/>
+            <g data-opt="hair:receding">
+              <path class="hair" stroke="#2b2141" stroke-width="3" d="M64 158 C58 124 66 100 84 88 C79 110 77 134 81 158 Z"/>
+              <path class="hair" stroke="#2b2141" stroke-width="3" d="M236 158 C242 124 234 100 216 88 C221 110 223 134 219 158 Z"/>
+              <path class="hair" d="M86 90 C102 62 126 53 150 53 C174 53 198 62 214 90 C198 79 176 73 150 73 C124 73 102 79 86 90 Z"/>
+            </g>
+            <ellipse data-opt="hair:receding hair:bald" class="shine" cx="124" cy="94" rx="15" ry="6" transform="rotate(-20 124 94)"/>
+
+            <path class="brow brow-l" d="M96 122 Q116 112 138 122"/>
+            <path class="brow brow-r" d="M162 122 Q184 112 204 122"/>
+            <g class="eyes-open">
+              <g>
+                <ellipse class="eye-white" cx="117" cy="152" rx="17" ry="15"/>
+                <circle class="pupil" cx="117" cy="153" r="7"/>
+                <g clip-path="url(#clipEyeL)"><rect class="lid face" x="96" y="118" width="42" height="34"/><rect class="lid-tint" x="96" y="118" width="42" height="34"/></g>
+                <ellipse class="eye-outline line" cx="117" cy="152" rx="17" ry="15"/>
+              </g>
+              <g>
+                <ellipse class="eye-white" cx="183" cy="152" rx="17" ry="15"/>
+                <circle class="pupil" cx="183" cy="153" r="7"/>
+                <g clip-path="url(#clipEyeR)"><rect class="lid face" x="162" y="118" width="42" height="34"/><rect class="lid-tint" x="162" y="118" width="42" height="34"/></g>
+                <ellipse class="eye-outline line" cx="183" cy="152" rx="17" ry="15"/>
+              </g>
+            </g>
+            <g class="eyes-closed">
+              <path class="line" fill="none" style="stroke-width:5" d="M101 156 Q117 140 133 156"/>
+              <path class="line" fill="none" style="stroke-width:5" d="M167 156 Q183 140 199 156"/>
+            </g>
+            <path class="line" fill="none" d="M150 162 Q140 180 153 184"/>
+
+            <!-- facial hair -->
+            <path data-opt="beard:full" class="hair line" style="stroke-width:3" d="M66 150 C66 214 104 250 150 250 C196 250 234 214 234 150 C226 172 214 184 198 190 C188 194 180 197 177 203 C173 221 161 227 150 227 C139 227 127 221 123 203 C120 197 112 194 102 190 C86 184 74 172 66 150 Z"/>
+            <path data-opt="beard:stubble" class="stubble" d="M66 150 C66 214 104 250 150 250 C196 250 234 214 234 150 C226 172 214 184 198 190 C188 194 180 197 177 203 C173 221 161 227 150 227 C139 227 127 221 123 203 C120 197 112 194 102 190 C86 184 74 172 66 150 Z"/>
+            <path data-opt="beard:goatee" class="hair line" style="stroke-width:3" d="M130 224 Q150 230 170 224 Q168 246 150 248 Q132 246 130 224 Z"/>
+
+            <path class="mouth m0 line" fill="none" d="M134 208 Q150 214 166 206"/>
+            <path class="mouth m1 line" fill="none" d="M132 205 Q150 221 168 205"/>
+            <path class="mouth m2 line" fill="none" d="M128 210 q5.5 -6 11 0 t11 0 t11 0 t11 0"/>
+            <ellipse class="mouth m3 line" fill="#7a2a3a" cx="150" cy="211" rx="7" ry="9"/>
+            <path class="mouth m4 line" fill="none" d="M136 206 q7 11 14 0 q7 11 14 0"/>
+
+            <path data-opt="beard:full beard:mustache beard:goatee" class="hair line" style="stroke-width:3" d="M114 207 C120 190 140 185 150 192 C160 185 180 190 186 207 C174 199 162 200 150 203 C138 200 126 199 114 207 Z"/>
+            <path data-opt="beard:stubble" class="stubble" d="M114 207 C120 190 140 185 150 192 C160 185 180 190 186 207 C174 199 162 200 150 203 C138 200 126 199 114 207 Z"/>
+            <circle data-opt="mole:on" cx="113" cy="186" r="3.5" fill="#3b2418"/>
+
+            <!-- glasses -->
+            <g data-opt="glasses:browline" fill="none" stroke-linecap="round">
+              <rect x="93" y="136" width="50" height="34" rx="9" fill="#fff" fill-opacity=".18" stroke="#8a8f99" stroke-width="2.5"/>
+              <rect x="157" y="136" width="50" height="34" rx="9" fill="#fff" fill-opacity=".18" stroke="#8a8f99" stroke-width="2.5"/>
+              <path d="M96 138 L140 138 M160 138 L204 138" stroke="#1f1a1a" stroke-width="7"/>
+              <path d="M143 146 Q150 140 157 146" stroke="#8a8f99" stroke-width="3"/>
+              <path d="M93 142 L68 147 M207 142 L232 147" stroke="#1f1a1a" stroke-width="4"/>
+              <rect x="88" y="137" width="7" height="5" rx="1.5" fill="#d4a640" stroke="none"/>
+              <rect x="205" y="137" width="7" height="5" rx="1.5" fill="#d4a640" stroke="none"/>
+            </g>
+            <g data-opt="glasses:round" fill="none" stroke="#2b2141" stroke-width="4" stroke-linecap="round">
+              <circle cx="117" cy="152" r="22" fill="#fff" fill-opacity=".15"/>
+              <circle cx="183" cy="152" r="22" fill="#fff" fill-opacity=".15"/>
+              <path d="M139 150 Q150 143 161 150 M95 148 L68 150 M205 148 L232 150"/>
+            </g>
+            <g data-opt="glasses:square" fill="none" stroke="#2b2141" stroke-width="5" stroke-linecap="round">
+              <rect x="92" y="134" width="52" height="36" rx="4" fill="#fff" fill-opacity=".15"/>
+              <rect x="156" y="134" width="52" height="36" rx="4" fill="#fff" fill-opacity=".15"/>
+              <path d="M144 148 L156 148 M92 144 L68 148 M208 144 L232 148"/>
+            </g>
+            <g data-opt="glasses:shades" stroke="#2b2141" stroke-linecap="round">
+              <rect x="92" y="136" width="52" height="32" rx="12" fill="#1d1d2b" stroke-width="4"/>
+              <rect x="156" y="136" width="52" height="32" rx="12" fill="#1d1d2b" stroke-width="4"/>
+              <path d="M144 148 Q150 143 156 148 M92 144 L68 148 M208 144 L232 148" fill="none" stroke-width="4"/>
+              <path d="M101 145 l12 0 M165 145 l12 0" stroke="#fff" stroke-opacity=".55" stroke-width="3"/>
+            </g>
+          </g>
+
+          <!-- shy overlays (work on drawn face and photo) -->
+          <ellipse class="blush" cx="96" cy="190" rx="18" ry="10"/>
+          <ellipse class="blush" cx="204" cy="190" rx="18" ry="10"/>
+          <path class="blush-lines" d="M85 194 l7 -9 M96 196 l7 -9 M107 194 l7 -9 M186 194 l7 -9 M197 196 l7 -9 M208 194 l7 -9"/>
+          <path class="sweat" d="M230 92 C220 106 222 116 230 116 C238 116 240 106 230 92 Z" fill="#8fd3ff" stroke="#2b2141" stroke-width="3"/>
+          <g class="steam steam-l">
+            <circle class="puff p1" cx="112" cy="64" r="10"/>
+            <circle class="puff p2" cx="112" cy="64" r="10"/>
+            <circle class="puff p3" cx="112" cy="64" r="10"/>
+          </g>
+          <g class="steam steam-r">
+            <circle class="puff p1" cx="188" cy="64" r="10"/>
+            <circle class="puff p2" cx="188" cy="64" r="10"/>
+            <circle class="puff p3" cx="188" cy="64" r="10"/>
+          </g>
+          <text class="heart h1" x="40" y="120">♥</text>
+          <text class="heart h2" x="244" y="104">♥</text>
+          <text class="heart h3" x="216" y="58">♥</text>
+          <g class="arms-up">
+            <path class="sleeve-outline" d="M82 356 L110 226 M218 356 L190 226"/>
+            <path class="sleeve" d="M82 356 L110 226 M218 356 L190 226"/>
+            <use href="#hand" transform="translate(114 198) rotate(10)"/>
+            <use href="#hand" transform="translate(186 198) rotate(-10) scale(-1 1)"/>
+          </g>
+          <g class="stuffed stuffed-dosa-g">
+            <ellipse cx="148" cy="214" rx="14" ry="11" fill="#5a1a2a" stroke="#2b2141" stroke-width="3.5"/>
+            <path d="M140 218 C150 198 196 186 216 196 C220 200 218 206 214 208 C198 206 164 216 152 226 Z" fill="#e9a84a" stroke="#2b2141" stroke-width="3.5" stroke-linejoin="round"/>
+            <ellipse cx="214" cy="202" rx="5" ry="7" fill="#f6c46e" stroke="#2b2141" stroke-width="3"/>
+          </g>
+          <g class="stuffed stuffed-egg-g">
+            <ellipse cx="150" cy="215" rx="16" ry="12" fill="#5a1a2a" stroke="#2b2141" stroke-width="3.5"/>
+            <ellipse cx="150" cy="212" rx="10" ry="13" fill="#fff8ec" stroke="#2b2141" stroke-width="3"/>
+          </g>
+        </svg>
+      </button>
+      </div>
+      <div class="mood" id="mood">😅 Greg is a little awkward</div>
+      <div class="tag-row">
+        <button class="name-tag" id="renameBtn" title="Rename your victim">✏️ <span class="js-name">Greg</span></button>
+        <button class="name-tag alt" id="photoBtn" title="Use a photo of their face">📷 Use a photo</button>
+        <button class="name-tag plain" id="photoRemoveBtn" hidden>✖ Remove photo</button>
+        <input type="file" id="photoInput" accept="image/*" hidden>
+      </div>
+      <div class="hint">Poke them. Watch them turn pink.</div>
+      <details class="card customize" id="customize">
+        <summary>🎨 Customize character</summary>
+        <div class="cz-presets">
+          <button class="btn small" data-preset="reference">🧔 Reference look</button>
+          <button class="btn small purple" data-preset="classic">🧑 Classic</button>
+          <button class="btn small pink" data-preset="random">🎲 Randomize</button>
+        </div>
+        <p class="hint" id="czPhotoNote" style="text-align:left;margin-top:0" hidden>A photo is in use, so the face options won't show. The shirt options still apply.</p>
+        <div id="czRows"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- MIDDLE: stats + prestige + achievements -->
+  <section class="col col-mid">
+    <div class="card">
+      <h2>📊 Stats</h2>
+      <dl class="stats">
+        <dt>Total pokes</dt><dd id="stClicks">0</dd>
+        <dt>Lifetime Annoyance</dt><dd id="stLifetime">0</dd>
+        <dt>Annoyance this run</dt><dd id="stRun">0</dd>
+        <dt>Time played</dt><dd id="stTime">0s</dd>
+        <dt>Highest Annoyance/sec</dt><dd id="stHigh">0</dd>
+        <dt>Touches owned</dt><dd id="stOwned">0</dd>
+        <dt>Upgrades owned</dt><dd id="stUpg">0</dd>
+        <dt>Golden Moments seized</dt><dd id="stGold">0</dd>
+        <dt>Restraining Orders</dt><dd id="stPrestige">0</dd>
+      </dl>
+    </div>
+
+    <div class="card prestige-card">
+      <h2>⚖️ Restraining Order</h2>
+      <div class="grudge-line" id="grudgeLine">Grudge: 0 (+0% Annoyance)</div>
+      <p><span class="js-name">Greg</span> finally lawyers up. You lose your Annoyance, Touches and Upgrades, but every <b>Grudge</b> point permanently boosts production by <b>+2%</b>.</p>
+      <div class="bar"><div id="prestigeBar"></div></div>
+      <div class="bar-label" id="prestigeLabel">0 / 1 billion lifetime Annoyance</div>
+      <button class="btn purple block" id="prestigeBtn" disabled>Serve the papers</button>
+    </div>
+
+    <div class="card">
+      <h2>🏆 Achievements <small id="achCount">0 / 0</small></h2>
+      <div class="ach-grid" id="achGrid"></div>
+      <div class="ach-detail" id="achDetail">Hover an achievement for details.</div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ Save</h2>
+      <p class="hint" style="text-align:left;margin:0 0 10px">Autosaves every 10 seconds. <span id="lastSaved"></span></p>
+      <div class="btn-row">
+        <button class="btn" id="saveBtn">💾 Save now</button>
+        <button class="btn pink" id="resetBtn">🗑️ Reset Save</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: shop -->
+  <section class="col col-right">
+    <div class="card">
+      <h3 class="shop-section-title">✨ Upgrades</h3>
+      <div class="upg-grid" id="upgGrid"></div>
+      <div class="empty" id="upgEmpty">Nothing yet. Keep annoying them.</div>
+    </div>
+    <div class="card">
+      <h3 class="shop-section-title">
+        <span>🖐️ Touches</span>
+        <span class="amt-toggle" id="amtToggle">
+          <button data-amt="1" class="on">x1</button><button data-amt="10">x10</button><button data-amt="100">x100</button>
+        </span>
+      </h3>
+      <div class="bld-list" id="bldList"></div>
+      <div class="empty" id="bldEmpty">Poke them a few times to unlock your first Touch…</div>
+    </div>
+  </section>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ======================================================================
+// CONFIG: put your friend's name here (it can also be changed in-game)
+// ======================================================================
+const DEFAULT_NAME = 'Greg';
+
+const SAVE_KEY = 'annoyMyFriend.save.v1';
+const OFFLINE_CAP_SEC = 8 * 3600;
+const GRUDGE_BONUS = 0.02;
+const PRESTIGE_REQ = 1e9;
+const FRENZY_MULT = 7;
+const FRENZY_MS = 30000;
+const GOLDEN_LIFETIME_MS = 10000;
+const COST_GROWTH = 1.15;
+
+// ---------------------------------------------------------------- data
+const BUILDINGS = [
+  { name: 'Shoulder Tap',          emoji: '👆', base: 15,     cps: 0.1,     desc: "Tap tap. They turn. Nobody's there." },
+  { name: 'Hair Ruffle',           emoji: '💇', base: 100,    cps: 1,       desc: 'Undoes 45 minutes of hair gel in one swipe.' },
+  { name: 'Wet Willy',             emoji: '👂', base: 1100,   cps: 8,       desc: 'A damp finger. An unforgivable ear.' },
+  { name: 'Noogie',                emoji: '✊', base: 12000,  cps: 47,      desc: 'Knuckles + scalp = brotherly love.' },
+  { name: 'Surprise Hug',          emoji: '🤗', base: 130000, cps: 260,     desc: 'Arms pinned. Soul briefly leaves body.' },
+  { name: 'Group Hug',             emoji: '🫂', base: 1.4e6,  cps: 1400,    desc: 'The circle closes. There is no exit.' },
+  { name: 'Tickle Attack',         emoji: '🪶', base: 2e7,    cps: 7800,    desc: "They're giggling and hiding their face." },
+  { name: 'The Suplex',            emoji: '🤼', base: 3.3e8,  cps: 44000,   desc: 'Technically just a very committed hug.' },
+  { name: 'Hired Cuddle Mime',     emoji: '🎭', base: 5.1e9,  cps: 260000,  desc: "They're trapped in an invisible box. The mime is in there with them." },
+  { name: 'Entire Family Reunion', emoji: '👨‍👩‍👧‍👦', base: 7.5e10, cps: 1.6e6, desc: 'Aunt Linda has waited all year for this.' },
+];
+
+// type: click (x mult on poke) | clickPct (pokes gain % of APS) | bld (x mult on one touch) | global (x mult on everything)
+// type: click (x poke) | global (x everything) | feed (x force-feed reward; target dosa|egg|all) | feedSpeed (x cooldown)
+const fedTotal = s => s.fed.dosa + s.fed.egg;
+const UPGRADES = [
+  { id: 'dosa',      emoji: '🫓', name: 'Masala Dosa',             type: 'click',  mult: 2,    cost: 2500,   desc: 'Pokes 2x more annoying. Unlocks force-feeding dosa: click the plate!', cond: () => true },
+  { id: 'airplane',  emoji: '✈️', name: 'Here Comes the Airplane', type: 'feed', target: 'dosa', mult: 2, cost: 10000, desc: 'Dosa force-feeds give 2x Annoyance. Open wide!', cond: s => !!s.upgrades.dosa },
+  { id: 'egg',       emoji: '🥚', name: 'Egg on the Head',         type: 'global', mult: 1.15, cost: 50000,  desc: 'All Annoyance +15%. Unlocks force-feeding eggs: click the eggs!', cond: () => true },
+  { id: 'chutney',   emoji: '🥥', name: 'Extra Coconut Chutney',   type: 'feedSpeed', target: 'dosa', factor: 0.5, cost: 60000, desc: 'Dosa force-feeds recharge 2x faster.', cond: s => s.fed.dosa >= 5 },
+  { id: 'dozen',     emoji: '🧺', name: 'A Dozen Boiled Eggs',     type: 'feed', target: 'egg', mult: 2, cost: 150000, desc: 'Egg force-feeds give 2x Annoyance. Unpeeled.', cond: s => !!s.upgrades.egg },
+  { id: 'sambar',    emoji: '🍲', name: 'Bottomless Sambar',       type: 'global', mult: 1.1,  cost: 400000, desc: 'All Annoyance +10%. The refills never stop.', cond: s => s.fed.dosa >= 3 },
+  { id: 'rawegg',    emoji: '🥤', name: 'Raw Egg Shake',           type: 'feedSpeed', target: 'egg', factor: 0.5, cost: 750000, desc: 'Egg force-feeds recharge 2x faster. Chug chug chug.', cond: s => s.fed.egg >= 5 },
+  { id: 'mysore',    emoji: '🌶️', name: 'Mysore Masala Dosa',      type: 'click',  mult: 3,    cost: 2.5e6,  desc: 'Pokes 3x more annoying. Spicy. Sweat everywhere.', cond: s => s.fed.dosa >= 10 },
+  { id: 'eggcurry',  emoji: '🍛', name: 'Egg Curry',               type: 'global', mult: 1.2,  cost: 2e7,    desc: 'All Annoyance +20%.', cond: s => s.fed.egg >= 10 },
+  { id: 'buffet',    emoji: '🍽️', name: 'Unlimited Breakfast Buffet', type: 'feed', target: 'all', mult: 2, cost: 1e8, desc: 'Every force-feed gives 2x Annoyance.', cond: s => fedTotal(s) >= 30 },
+  { id: 'gheeroast', emoji: '🧈', name: 'Ghee Roast Dosa',         type: 'feed', target: 'dosa', mult: 3, cost: 1e9,  desc: 'Dosa force-feeds give 3x Annoyance. Extra crispy.', cond: s => s.fed.dosa >= 40 },
+  { id: 'omelette',  emoji: '🍳', name: 'Twelve-Egg Omelette',     type: 'feed', target: 'egg', mult: 3, cost: 5e9,   desc: 'Egg force-feeds give 3x Annoyance.', cond: s => s.fed.egg >= 40 },
+  { id: 'foodcoma',  emoji: '😵', name: 'Food Coma',               type: 'global', mult: 1.5,  cost: 5e10,   desc: 'All Annoyance +50%. Too full to fight back.', cond: s => fedTotal(s) >= 100 },
+].sort((a, b) => a.cost - b.cost);
+
+const STAGES = [
+  { min: 0,     emoji: '😅', label: 'a little awkward' },
+  { min: 5,     emoji: '☺️', label: 'blushing' },
+  { min: 50,    emoji: '😳', label: 'totally flustered' },
+  { min: 500,   emoji: '🙈', label: 'SO embarrassed' },
+  { min: 5000,  emoji: '🫠', label: 'melting into a puddle' },
+  { min: 50000, emoji: '🫣', label: 'too shy to function' },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'first',    emoji: '👉', name: 'First Contact',        desc: 'Poke them for the first time.',          check: s => s.clicks >= 1 },
+  { id: 'c100',     emoji: '✋', name: 'They Said Stop',        desc: 'Poke them 100 times.',                   check: s => s.clicks >= 100 },
+  { id: 'c1000',    emoji: '🚨', name: 'Repeat Offender',      desc: 'Poke them 1,000 times.',                 check: s => s.clicks >= 1000 },
+  { id: 'c5000',    emoji: '🦾', name: 'Carpal Tunnel',        desc: 'Poke them 5,000 times.',                 check: s => s.clicks >= 5000, big: true },
+  { id: 'rapid',    emoji: '🐦', name: 'Woodpecker',           desc: 'Poke them 15 times in 2 seconds.',       check: s => s.flags.rapid },
+  { id: 'l1k',      emoji: '😑', name: 'Mildly Inconvenient',  desc: 'Earn 1,000 lifetime Annoyance.',        check: s => s.lifetime >= 1e3 },
+  { id: 'l100k',    emoji: '🐜', name: 'Under Their Skin',       desc: 'Earn 100K lifetime Annoyance.',         check: s => s.lifetime >= 1e5 },
+  { id: 'l10m',     emoji: '🦟', name: 'Professional Pest',    desc: 'Earn 10M lifetime Annoyance.',          check: s => s.lifetime >= 1e7 },
+  { id: 'l1b',      emoji: '💔', name: 'Emotional Damage',     desc: 'Earn 1B lifetime Annoyance.',           check: s => s.lifetime >= 1e9, big: true },
+  { id: 'l1t',      emoji: '🧬', name: 'Generational Trauma',  desc: 'Earn 1T lifetime Annoyance.',           check: s => s.lifetime >= 1e12, big: true },
+  { id: 'tap25',    emoji: '🩰', name: 'Tap Dancer',           desc: 'Own 25 Shoulder Taps.',                 check: s => s.owned[0] >= 25 },
+  { id: 'hug10',    emoji: '🫣', name: 'Unwanted',             desc: 'Own 10 Surprise Hugs.',                 check: s => s.owned[4] >= 10 },
+  { id: 'group1',   emoji: '🫂', name: 'Cuddle Puddle',        desc: 'Own a Group Hug.',                      check: s => s.owned[5] >= 1 },
+  { id: 'mime1',    emoji: '🎭', name: 'Silent But Clingy',    desc: 'Hire a Cuddle Mime.',                   check: s => s.owned[8] >= 1 },
+  { id: 'family1',  emoji: '🍗', name: 'Reunion Tour',         desc: 'Summon the Entire Family Reunion.',     check: s => s.owned[9] >= 1, big: true },
+  { id: 'b100',     emoji: '🙌', name: 'Hands Everywhere',     desc: 'Own 100 Touches at once.',              check: s => totalOwned(s) >= 100 },
+  { id: 'aps10',    emoji: '🚰', name: 'Steady Stream',        desc: 'Reach 10 Annoyance per second.',        check: s => s.highestAps >= 10 },
+  { id: 'aps1k',    emoji: '♨️', name: 'Beet Red',              desc: 'Reach 1,000 Annoyance per second.',     check: s => s.highestAps >= 1000 },
+  { id: 'melt',     emoji: '🫣', name: 'Too Shy to Function',  desc: 'Fluster them until they hide behind their hands.',        check: s => s.maxStage >= 5, big: true },
+  { id: 'gold1',    emoji: '🌟', name: 'Seize the Moment',     desc: 'Click a Golden Moment.',                check: s => s.goldenClicks >= 1 },
+  { id: 'gold10',   emoji: '🕵️', name: 'Opportunist',          desc: 'Click 10 Golden Moments.',              check: s => s.goldenClicks >= 10 },
+  { id: 'upg8',     emoji: '🍳', name: 'Full Breakfast',       desc: 'Own the Dosa and the Eggs.',            check: s => Object.keys(s.upgrades).length >= UPGRADES.length },
+  { id: 'offline',  emoji: '📡', name: 'Remote Annoyance',     desc: 'Earn Annoyance while you were away.',   check: s => s.flags.offline },
+  { id: 'rename',   emoji: '🥸', name: 'Witness Protection',   desc: "Rename them. It won't help.",            check: s => s.flags.renamed },
+  { id: 'photo',    emoji: '📸', name: 'Say Cheese',           desc: 'Import a photo of your victim.',        check: s => s.flags.photo },
+  { id: 'glowup',   emoji: '💇', name: 'Glow Up',              desc: 'Customize their look.',                 check: s => s.flags.customized },
+  { id: 'feed1',    emoji: '🥄', name: 'Open Wide',            desc: 'Force-feed your victim for the first time.', check: s => fedTotal(s) >= 1 },
+  { id: 'feed25',   emoji: '🍴', name: 'Professional Feeder',  desc: 'Force-feed 25 times.',                  check: s => fedTotal(s) >= 25 },
+  { id: 'eggrain',  emoji: '🌧️', name: 'Egg Storm',            desc: 'Make it rain eggs (earn 100 Annoyance).', check: s => s.flags.eggRain },
+  { id: 'prestige1',emoji: '⚖️', name: 'Legally Distinct',     desc: 'File your first Restraining Order.',    check: s => s.prestiges >= 1, big: true },
+];
+
+const LINES = ['Bro…', 'D-don\'t.', 'P-personal space!', 'I swear...', 'Why are you like this 🙈', 'Stoppp', "I'm telling mom…",
+  'Not in public!', 'People are looking!', 'Ehehe… no.', "You're so weird.", 'My face is NOT red.', 'Okay that one tickled.', '*shy noises*'];
+// signature lines: shown far more often than the rest
+const SIGNATURE_LINES = ['bro bro bro stop stop', 'chill chill chilll'];
+const FRIEND_NAMES = ['Arvind', 'Jeff', 'Smit', 'Shreyash'];
+const NAME_PHRASES = ['stop touching me!', 'please stop.', "please don't.", 'why do you love touching me?', 'STOP.', 'hands OFF!'];
+const GROUP_LINES = ['Please stop.', "Please don't.", 'Guys, this is gay.', 'You guys are gay.', 'Why do you love touching me?',
+  'I love being touched.', 'I love to ragebait you guys.', 'Stop.'];
+const RAIN_LINES = ['WHY IS IT RAINING EGGS', 'Not the eggs!!', 'Who is throwing these?!', 'I just washed my hair', 'bro bro bro stop stop'];
+const FEED_LINES = ['MMPH!', 'mmf mmmf (stop)', "bro I'm full", 'not the dosa 😭', 'why is it always eggs', "I can't feel my jaw", '*aggressive chewing*'];
+function pickLine(stage) {
+  const r = Math.random();
+  if (r < 0.25) return pick(SIGNATURE_LINES);
+  if (r < 0.45) return `${pick(FRIEND_NAMES)}, ${pick(NAME_PHRASES)}`;
+  if (r < 0.65) return pick(GROUP_LINES);
+  return pick(stage >= 4 ? LINES.concat(MELTDOWN_LINES, MELTDOWN_LINES) : LINES);
+}
+const MELTDOWN_LINES = ['*hides face*', "I'm gonna evaporate", 'Can\'t. Too much.', 'Please, I have a reputation', '*tiny embarrassed squeak*'];
+const GOLDEN_MOMENTS = [
+  { emoji: '😴', text: "They're asleep on the couch" },
+  { emoji: '🎧', text: "They've got headphones in" },
+  { emoji: '📱', text: "They're doomscrolling" },
+  { emoji: '🍕', text: 'Both hands are full of pizza' },
+  { emoji: '👟', text: "They're tying their shoes" },
+  { emoji: '🤧', text: "They're mid-sneeze" },
+];
+
+// ----------------------------------------------------------- appearance
+const LOOK_OPTIONS = {
+  skin:      { label: 'Skin tone', type: 'color', values: ['#ffe0c7', '#f7cfa4', '#e8b48a', '#c48a64', '#a86e4a', '#8d5a3b', '#6b4129', '#4a2c1d'] },
+  hair:      { label: 'Hair', type: 'choice', values: [['receding', 'Receding'], ['spiky', 'Spiky'], ['short', 'Buzz cut'], ['curly', 'Curly'], ['long', 'Long'], ['bald', 'Bald']] },
+  hairColor: { label: 'Hair color', type: 'color', values: ['#1c1714', '#2a201b', '#5a3825', '#a0522d', '#d9b26f', '#9b9b9b', '#ff5d8f', '#4d8dff'] },
+  beard:     { label: 'Facial hair', type: 'choice', values: [['none', 'None'], ['stubble', 'Stubble'], ['mustache', 'Mustache'], ['goatee', 'Goatee'], ['full', 'Full beard']] },
+  glasses:   { label: 'Glasses', type: 'choice', values: [['none', 'None'], ['browline', 'Browline'], ['round', 'Round'], ['square', 'Square'], ['shades', 'Shades']] },
+  mole:      { label: 'Cheek mole', type: 'choice', values: [['on', 'Yes'], ['off', 'No']] },
+  outfit:    { label: 'Outfit', type: 'choice', values: [['hoodie', 'Carhartt hoodie'], ['tee', 'T-shirt']] },
+  shirt:     { label: 'Hoodie / shirt color', type: 'color', values: ['#7b5232', '#4d8dff', '#ff5d8f', '#2ec4b6', '#7b5cff', '#ffb800', '#e8553e', '#2b2141', '#f4f1ea'] },
+  shirtText: { label: 'Shirt text', type: 'text' },
+};
+// default matches the reference photo
+const REFERENCE_LOOK = { skin: '#c48a64', hair: 'receding', hairColor: '#2a201b', beard: 'full', glasses: 'browline', mole: 'on', outfit: 'hoodie', shirt: '#7b5232', shirtText: 'DO NOT TOUCH' };
+const CLASSIC_LOOK = { skin: '#f7cfa4', hair: 'spiky', hairColor: '#5a3825', beard: 'none', glasses: 'none', mole: 'off', outfit: 'tee', shirt: '#4d8dff', shirtText: 'DO NOT TOUCH' };
+
+// --------------------------------------------------------------- state
+function freshState() {
+  return {
+    annoyance: 0, runEarned: 0, lifetime: 0,
+    clicks: 0, timePlayed: 0, highestAps: 0, goldenClicks: 0,
+    owned: BUILDINGS.map(() => 0),
+    unlocked: BUILDINGS.map(() => false),
+    upgrades: {}, achievements: {},
+    grudge: 0, prestiges: 0, maxStage: 0,
+    frenzyEnd: 0, frenzyText: '',
+    fed: { dosa: 0, egg: 0 },
+    flags: { rapid: false, offline: false, renamed: false, photo: false, customized: false, eggRain: false },
+    name: DEFAULT_NAME, buyAmt: 1, look: { ...REFERENCE_LOOK },
+    lastSave: Date.now(),
+  };
+}
+let S = freshState();
+
+function totalOwned(s) { return s.owned.reduce((a, b) => a + b, 0); }
+
+// ---------------------------------------------------------- formatting
+const SHORT = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+const LONG = ['', 'thousand', 'million', 'billion', 'trillion', 'quadrillion', 'quintillion', 'sextillion', 'septillion', 'octillion', 'nonillion', 'decillion'];
+
+function splitTier(n) {
+  let tier = Math.floor(Math.log10(n) / 3);
+  let val = n / Math.pow(1000, tier);
+  if (val >= 999.995) { tier++; val /= 1000; }
+  return [tier, val];
+}
+// Compact: 999 → 999, 1234 → 1.23K, 1.5e9 → 1.50B
+function fmt(n, decimals = false) {
+  if (!isFinite(n)) return '∞';
+  if (n < 0) return '-' + fmt(-n, decimals);
+  if (n < 1000) {
+    if (decimals && n % 1 !== 0) return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '');
+    return String(Math.floor(n));
+  }
+  const [tier, val] = splitTier(n);
+  if (tier >= SHORT.length) return n.toExponential(2);
+  return val.toFixed(2) + SHORT[tier];
+}
+// Long: 1,234 / 999,999 / 1.234 million / 5.6 billion
+function fmtLong(n) {
+  if (!isFinite(n)) return '∞';
+  n = Math.floor(n);
+  if (n < 1e6) return n.toLocaleString('en-US');
+  const [tier, val] = splitTier(n);
+  if (tier >= LONG.length) return n.toExponential(3);
+  return val.toFixed(3) + ' ' + LONG[tier];
+}
+function fmtTime(sec) {
+  sec = Math.floor(sec);
+  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  if (d) return `${d}d ${h}h ${m}m`;
+  if (h) return `${h}h ${m}m`;
+  if (m) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const $ = id => document.getElementById(id);
+
+// ----------------------------------------------------------- economics
+function unitCost(i, owned) { return Math.ceil(BUILDINGS[i].base * Math.pow(COST_GROWTH, owned)); }
+function bulkCost(i, n) {
+  let total = 0;
+  for (let k = 0; k < n; k++) total += unitCost(i, S.owned[i] + k);
+  return total;
+}
+function hasUpg(id) { return !!S.upgrades[id]; }
+function prodMult() {
+  let m = 1 + GRUDGE_BONUS * S.grudge;
+  for (const u of UPGRADES) if (u.type === 'global' && hasUpg(u.id)) m *= u.mult;
+  return m;
+}
+function bldMult(i) {
+  let m = 1;
+  for (const u of UPGRADES) if (u.type === 'bld' && u.target === i && hasUpg(u.id)) m *= u.mult;
+  return m;
+}
+function frenzyOn() { return S.frenzyEnd > Date.now(); }
+function frenzyMult() { return frenzyOn() ? FRENZY_MULT : 1; }
+function bldEach(i) { return BUILDINGS[i].cps * bldMult(i) * prodMult() * frenzyMult(); }
+function baseAps() {
+  let t = 0;
+  for (let i = 0; i < BUILDINGS.length; i++) t += BUILDINGS[i].cps * S.owned[i] * bldMult(i);
+  return t * prodMult();
+}
+function getAps() { return baseAps() * frenzyMult(); }
+function clickPower() {
+  let mult = 1, pct = 0;
+  for (const u of UPGRADES) {
+    if (!hasUpg(u.id)) continue;
+    if (u.type === 'click') mult *= u.mult;
+    else if (u.type === 'clickPct') pct += u.pct;
+  }
+  return (mult * prodMult() + pct * baseAps()) * frenzyMult();
+}
+function earn(amount) {
+  if (!(amount > 0)) return;
+  S.annoyance += amount;
+  S.runEarned += amount;
+  S.lifetime += amount;
+}
+function grudgeAvailable() {
+  if (S.lifetime < PRESTIGE_REQ) return 0;
+  return Math.max(0, Math.floor(Math.cbrt(S.lifetime / PRESTIGE_REQ)) - S.grudge);
+}
+function stageFor(aps) {
+  let st = 0;
+  STAGES.forEach((s, i) => { if (aps >= s.min) st = i; });
+  return st;
+}
+
+// ---------------------------------------------------------------- save
+function save() {
+  try {
+    S.lastSave = Date.now();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+    $('lastSaved').textContent = 'Last saved ' + new Date(S.lastSave).toLocaleTimeString() + '.';
+    return true;
+  } catch (e) {
+    console.warn('Save failed', e);
+    return false;
+  }
+}
+function loadSave() {
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(raw);
+    const s = freshState();
+    const num = (v, fb) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : fb);
+    for (const k of ['annoyance', 'runEarned', 'lifetime', 'clicks', 'timePlayed', 'highestAps', 'goldenClicks', 'grudge', 'prestiges', 'maxStage', 'frenzyEnd', 'lastSave']) {
+      s[k] = num(d[k], s[k]);
+    }
+    if (Array.isArray(d.owned)) s.owned = s.owned.map((_, i) => Math.floor(num(d.owned[i], 0)));
+    if (Array.isArray(d.unlocked)) s.unlocked = s.unlocked.map((_, i) => !!d.unlocked[i]);
+    if (d.upgrades && typeof d.upgrades === 'object') for (const u of UPGRADES) if (d.upgrades[u.id]) s.upgrades[u.id] = true;
+    if (d.achievements && typeof d.achievements === 'object') for (const a of ACHIEVEMENTS) if (d.achievements[a.id]) s.achievements[a.id] = true;
+    if (d.flags && typeof d.flags === 'object') for (const f in s.flags) s.flags[f] = !!d.flags[f];
+    if (typeof d.name === 'string' && d.name.trim()) s.name = d.name.trim().slice(0, 24);
+    if ([1, 10, 100].includes(d.buyAmt)) s.buyAmt = d.buyAmt;
+    if (d.fed && typeof d.fed === 'object') for (const k in s.fed) s.fed[k] = Math.floor(num(d.fed[k], 0));
+    if (d.look && typeof d.look === 'object') {
+      // saves from before the hoodie existed get the hoodie in Carhartt brown
+      if (!('outfit' in d.look)) s.look.shirt = REFERENCE_LOOK.shirt;
+      for (const k in REFERENCE_LOOK) {
+        const v = d.look[k], opt = LOOK_OPTIONS[k];
+        if (opt.type === 'color') { if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) s.look[k] = v; }
+        else if (opt.type === 'choice') { if (opt.values.some(([val]) => val === v)) s.look[k] = v; }
+        else if (typeof v === 'string') s.look[k] = v.slice(0, 16);
+      }
+    }
+    if (typeof d.frenzyText === 'string') s.frenzyText = d.frenzyText;
+    return s;
+  } catch (e) {
+    console.warn('Corrupt save ignored', e);
+    return null;
+  }
+}
+
+// ------------------------------------------------------------- effects
+function shake() {
+  const app = $('app');
+  app.classList.remove('shake');
+  void app.offsetWidth;
+  app.classList.add('shake');
+}
+function restartAnim(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+function toast(emoji, title, body, kind = '') {
+  const box = $('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + kind;
+  t.innerHTML = `<span class="te"></span><div><div class="tt"></div><div class="tb"></div></div>`;
+  t.querySelector('.te').textContent = emoji;
+  t.querySelector('.tt').textContent = title;
+  t.querySelector('.tb').textContent = body;
+  box.appendChild(t);
+  while (box.children.length > 5) box.firstChild.remove();
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 4200);
+}
+function floatNumber(x, y, text, frenzied) {
+  const f = document.createElement('div');
+  f.className = 'float-num' + (frenzied ? ' frenzied' : '');
+  f.textContent = text;
+  f.style.left = (x + rand(-14, 14)) + 'px';
+  f.style.top = y + 'px';
+  document.body.appendChild(f);
+  f.addEventListener('animationend', () => f.remove());
+}
+let bubbleEl = null;
+function speechBubble(stage, text) {
+  if (bubbleEl) bubbleEl.remove();
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = text || pickLine(stage);
+  b.style.setProperty('--rot', rand(-6, 6).toFixed(1) + 'deg');
+  const area = $('stageArea');
+  const charRect = $('char').getBoundingClientRect();
+  const areaRect = area.getBoundingClientRect();
+  b.style.left = Math.max(0, charRect.left - areaRect.left + charRect.width * rand(0.45, 0.6)) + 'px';
+  area.appendChild(b);
+  bubbleEl = b;
+  setTimeout(() => { if (b.isConnected) b.remove(); if (bubbleEl === b) bubbleEl = null; }, 1900);
+}
+
+// ---------------------------------------------------------------- modal
+function modal({ title, body, buttons, input, onClose }) {
+  const root = $('modalRoot');
+  root.innerHTML = '';
+  const bd = document.createElement('div');
+  bd.className = 'modal-backdrop';
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.setAttribute('role', 'dialog');
+  m.setAttribute('aria-modal', 'true');
+  const h = document.createElement('h3');
+  h.textContent = title;
+  const b = document.createElement('div');
+  b.className = 'mbody';
+  b.innerHTML = body;
+  let inp = null;
+  if (input) {
+    inp = document.createElement('input');
+    inp.type = 'text';
+    inp.maxLength = 24;
+    inp.value = input.value || '';
+    b.appendChild(inp);
+  }
+  const row = document.createElement('div');
+  row.className = 'btn-row';
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; document.removeEventListener('keydown', onKey); root.innerHTML = ''; onClose && onClose(); };
+  const onKey = e => {
+    if (e.key === 'Escape') close();
+    if (e.key === 'Enter' && inp) { const p = buttons.find(x => x.primary); if (p) { p.onClick && p.onClick(inp.value); close(); } }
+  };
+  buttons.forEach(cfg => {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + (cfg.cls || '');
+    btn.textContent = cfg.label;
+    btn.addEventListener('click', () => { cfg.onClick && cfg.onClick(inp ? inp.value : undefined); close(); });
+    row.appendChild(btn);
+  });
+  bd.addEventListener('click', e => { if (e.target === bd) close(); });
+  document.addEventListener('keydown', onKey);
+  m.append(h, b, row);
+  bd.appendChild(m);
+  root.appendChild(bd);
+  (inp || row.lastChild).focus();
+  if (inp) inp.select();
+  return m;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ------------------------------------------------------------ build DOM
+const bldEls = [];
+const upgEls = {};
+const achEls = {};
+
+function buildShop() {
+  const list = $('bldList');
+  list.innerHTML = '';
+  BUILDINGS.forEach((b, i) => {
+    const el = document.createElement('button');
+    el.className = 'bld';
+    el.innerHTML = `<span class="bld-icon"></span>
+      <span class="bld-main">
+        <span class="bld-name"></span>
+        <span class="bld-desc"></span>
+        <span class="bld-meta"><span class="bld-cost"></span><span class="bld-rate"></span></span>
+      </span>
+      <span class="bld-owned">0</span>`;
+    el.querySelector('.bld-icon').textContent = b.emoji;
+    el.querySelector('.bld-name').textContent = b.name;
+    el.querySelector('.bld-desc').textContent = b.desc;
+    el.addEventListener('click', () => buyBuilding(i));
+    list.appendChild(el);
+    bldEls[i] = { el, cost: el.querySelector('.bld-cost'), rate: el.querySelector('.bld-rate'), owned: el.querySelector('.bld-owned') };
+  });
+
+  const grid = $('upgGrid');
+  grid.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const el = document.createElement('button');
+    el.className = 'upg';
+    el.innerHTML = `<span class="ue"></span><span class="un"></span><span class="uc"></span><span class="ud"></span>`;
+    el.querySelector('.ue').textContent = u.emoji;
+    el.querySelector('.un').textContent = u.name;
+    el.querySelector('.uc').textContent = '😤 ' + fmt(u.cost);
+    el.querySelector('.ud').textContent = u.desc;
+    el.addEventListener('click', () => buyUpgrade(u, el));
+    grid.appendChild(el);
+    upgEls[u.id] = el;
+  });
+
+  const ag = $('achGrid');
+  ag.innerHTML = '';
+  ACHIEVEMENTS.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'ach locked';
+    el.tabIndex = 0;
+    el.innerHTML = `<span class="ae"></span><span class="an"></span>`;
+    const show = () => {
+      const got = !!S.achievements[a.id];
+      $('achDetail').textContent = got ? `${a.emoji} ${a.name}: ${a.desc}` : `🔒 ???: ${a.desc}`;
+    };
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('focus', show);
+    el.addEventListener('click', show);
+    ag.appendChild(el);
+    achEls[a.id] = el;
+  });
+  refreshAchievementTiles();
+}
+
+function refreshAchievementTiles() {
+  let n = 0;
+  ACHIEVEMENTS.forEach(a => {
+    const el = achEls[a.id];
+    const got = !!S.achievements[a.id];
+    if (got) n++;
+    el.classList.toggle('locked', !got);
+    el.querySelector('.ae').textContent = got ? a.emoji : '🔒';
+    el.querySelector('.an').textContent = got ? a.name : '???';
+    el.title = (got ? a.name : '???') + ': ' + a.desc;
+  });
+  $('achCount').textContent = `${n} / ${ACHIEVEMENTS.length}`;
+}
+
+function updateNames() {
+  document.querySelectorAll('.js-name').forEach(el => { el.textContent = S.name; });
+  document.title = `Annoy ${S.name} 😤`;
+  $('char').setAttribute('aria-label', `Poke ${S.name}`);
+}
+
+// -------------------------------------------------------------- actions
+const recentClicks = [];
+function poke(e) {
+  const gain = clickPower();
+  earn(gain);
+  S.clicks++;
+
+  const now = Date.now();
+  recentClicks.push(now);
+  while (recentClicks.length && now - recentClicks[0] > 2000) recentClicks.shift();
+  if (recentClicks.length >= 15) S.flags.rapid = true;
+
+  const charEl = $('char');
+  restartAnim(charEl, 'flinch');
+  let x = e.clientX, y = e.clientY;
+  if (!x && !y) { const r = charEl.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top + r.height / 3; }
+  floatNumber(x, y, '+' + fmt(gain, true), frenzyOn());
+  if (Math.random() < 0.16) speechBubble(currentStage);
+  render();
+}
+
+function buyBuilding(i) {
+  const n = S.buyAmt;
+  const cost = bulkCost(i, n);
+  const el = bldEls[i].el;
+  if (S.annoyance < cost) { restartAnim(el, 'nope'); return; }
+  S.annoyance -= cost;
+  S.owned[i] += n;
+  restartAnim(el, 'pop');
+  checkAchievements();
+  render();
+}
+
+function buyUpgrade(u, el) {
+  if (hasUpg(u.id)) return;
+  if (S.annoyance < u.cost) { restartAnim(el, 'nope'); return; }
+  S.annoyance -= u.cost;
+  S.upgrades[u.id] = true;
+  toast(u.emoji, u.name, u.desc);
+  const prop = { dosa: 'propDosa', egg: 'propEgg' }[u.id];
+  if (prop) restartAnim($(prop), 'prop-pop');
+  checkAchievements();
+  render();
+}
+
+function doPrestige() {
+  const gain = grudgeAvailable();
+  if (gain < 1) return;
+  const keep = S;
+  const s = freshState();
+  for (const k of ['lifetime', 'clicks', 'timePlayed', 'highestAps', 'goldenClicks', 'maxStage', 'achievements', 'flags', 'name', 'buyAmt', 'look', 'fed']) s[k] = keep[k];
+  s.grudge = keep.grudge + gain;
+  s.prestiges = keep.prestiges + 1;
+  S = s;
+  shake();
+  toast('⚖️', 'Restraining Order filed!', `+${fmt(gain)} Grudge. ${S.name} enjoys 3 seconds of peace.`, 'gold-toast');
+  checkAchievements();
+  save();
+  render();
+}
+
+function confirmPrestige() {
+  const gain = grudgeAvailable();
+  if (gain < 1) return;
+  const newTotal = S.grudge + gain;
+  modal({
+    title: '⚖️ File the Restraining Order?',
+    body: `${esc(S.name)} has had enough. You will <b>lose</b> your ${esc(fmt(S.annoyance))} Annoyance, all Touches and all Upgrades.<br><br>
+      You gain <b>+${esc(fmt(gain))} Grudge</b> (total ${esc(fmt(newTotal))} → <b>+${esc(fmt(newTotal * GRUDGE_BONUS * 100, true))}%</b> production forever).<br>
+      Achievements and stats are kept.`,
+    buttons: [
+      { label: 'Never mind', cls: 'ghost' },
+      { label: 'Serve the papers ⚖️', cls: 'purple', onClick: doPrestige },
+    ],
+  });
+}
+
+function confirmReset() {
+  modal({
+    title: '🗑️ Reset your save?',
+    body: `This wipes <b>everything</b>: Annoyance, Touches, Upgrades, Grudge, achievements and stats. ${esc(S.name)} would be thrilled. There is no undo. (Their name, look and photo are kept.)`,
+    buttons: [
+      { label: 'Keep my save', cls: 'ghost' },
+      { label: 'Wipe it', cls: 'pink', onClick: () => {
+        const name = S.name, look = S.look;
+        try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* storage unavailable */ }
+        S = freshState();
+        S.name = name;
+        S.look = look;
+        nextRainAt = 0;
+        currentStage = 0;
+        hideGolden(true);
+        scheduleGolden();
+        refreshAchievementTiles();
+        save();
+        render();
+        toast('🧽', 'Save wiped', `Fresh start. ${name} has no idea what's coming.`);
+      } },
+    ],
+  });
+}
+
+function rename() {
+  modal({
+    title: '✏️ Who are we annoying?',
+    body: 'Enter your victim\'s name:',
+    input: { value: S.name },
+    buttons: [
+      { label: 'Cancel', cls: 'ghost' },
+      { label: 'Rename', cls: 'purple', primary: true, onClick: v => {
+        const name = (v || '').trim().slice(0, 24);
+        if (!name || name === S.name) return;
+        S.name = name;
+        S.flags.renamed = true;
+        updateNames();
+        checkAchievements();
+        save();
+      } },
+    ],
+  });
+}
+
+// --------------------------------------------------------- golden moment
+let nextGoldenAt = 0, goldenEl = null, goldenExpire = 0;
+function scheduleGolden() { nextGoldenAt = Date.now() + rand(60, 180) * 1000; }
+function spawnGolden() {
+  if (goldenEl) return;
+  const g = pick(GOLDEN_MOMENTS);
+  const el = document.createElement('button');
+  el.className = 'golden';
+  el.innerHTML = `<span></span><small>Quick, click!</small>`;
+  el.firstChild.textContent = `${g.emoji} ${g.text}`;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  el.style.left = Math.round(rand(16, Math.max(17, vw - 250))) + 'px';
+  el.style.top = Math.round(rand(80, Math.max(81, vh - 110))) + 'px';
+  el.addEventListener('click', () => claimGolden(g));
+  document.body.appendChild(el);
+  goldenEl = el;
+  goldenExpire = Date.now() + GOLDEN_LIFETIME_MS;
+}
+function hideGolden(instant) {
+  if (!goldenEl) return;
+  const el = goldenEl;
+  goldenEl = null;
+  if (instant) { el.remove(); return; }
+  el.classList.add('leaving');
+  setTimeout(() => el.remove(), 400);
+}
+function claimGolden(g) {
+  if (!goldenEl) return;
+  const r = goldenEl.getBoundingClientRect();
+  hideGolden(false);
+  scheduleGolden();
+  S.goldenClicks++;
+  if (Math.random() < 0.5) {
+    S.frenzyEnd = Date.now() + FRENZY_MS;
+    S.frenzyText = `${g.emoji} ${g.text}!`;
+    toast(g.emoji, 'Golden Moment: 7x Annoyance!', `${g.text}. Strike now: 7x production for 30 seconds.`, 'gold-toast');
+  } else {
+    const lump = Math.min(S.annoyance * 0.15, baseAps() * 900) + 13;
+    earn(lump);
+    floatNumber(r.left + r.width / 2, r.top, '+' + fmt(lump), true);
+    toast(g.emoji, 'Golden Moment: Jackpot!', `${g.text}. You got +${fmt(lump)} Annoyance for free.`, 'gold-toast');
+  }
+  shake();
+  checkAchievements();
+  render();
+}
+
+// ---------------------------------------------------------- achievements
+function checkAchievements() {
+  let changed = false;
+  for (const a of ACHIEVEMENTS) {
+    if (S.achievements[a.id] || !a.check(S)) continue;
+    S.achievements[a.id] = true;
+    changed = true;
+    toast(a.emoji, 'Achievement: ' + a.name, a.desc, 'ach-toast');
+    if (a.big) shake();
+  }
+  if (changed) refreshAchievementTiles();
+}
+
+function checkUnlocks() {
+  BUILDINGS.forEach((b, i) => {
+    if (!S.unlocked[i] && (S.runEarned >= b.base * 0.5 || S.owned[i] > 0)) {
+      S.unlocked[i] = true;
+      restartAnim(bldEls[i].el, 'new-unlock');
+      toast(b.emoji, 'New Touch unlocked!', b.name + ': ' + b.desc);
+    }
+  });
+}
+
+// --------------------------------------------------------------- render
+const cache = new Map();
+function setText(el, txt) {
+  if (cache.get(el) !== txt) { el.textContent = txt; cache.set(el, txt); }
+}
+let currentStage = 0;
+
+function render() {
+  const aps = getAps();
+  setText($('count'), fmtLong(S.annoyance));
+  setText($('aps'), fmt(aps, true));
+  setText($('ppc'), fmt(clickPower(), true));
+
+  // frenzy banner
+  const fr = $('frenzy');
+  if (frenzyOn()) {
+    fr.hidden = false;
+    setText(fr, `🌟 ${S.frenzyText || 'Golden Moment!'} 7x Annoyance for ${Math.ceil((S.frenzyEnd - Date.now()) / 1000)}s`);
+  } else fr.hidden = true;
+
+  // expression
+  const stage = stageFor(aps);
+  if (stage !== currentStage) {
+    if (stage > currentStage && stage >= 2) shake();
+    currentStage = stage;
+  }
+  if (stage > S.maxStage) S.maxStage = stage;
+  const charEl = $('char');
+  if (charEl.dataset.stage !== String(stage)) {
+    charEl.dataset.stage = stage;
+    for (let k = 1; k <= 5; k++) charEl.classList.toggle('s' + k, stage >= k);
+  }
+  setText($('mood'), `${STAGES[stage].emoji} ${S.name} is ${STAGES[stage].label}`);
+
+  // buildings
+  let anyUnlocked = false;
+  BUILDINGS.forEach((b, i) => {
+    const e = bldEls[i];
+    const show = S.unlocked[i];
+    e.el.hidden = !show;
+    if (!show) return;
+    anyUnlocked = true;
+    const cost = bulkCost(i, S.buyAmt);
+    const each = bldEach(i);
+    setText(e.cost, `😤 ${fmt(cost)}${S.buyAmt > 1 ? ` (x${S.buyAmt})` : ''}`);
+    setText(e.rate, `+${fmt(each, true)}/s each · ${fmt(each * S.owned[i], true)}/s total`);
+    setText(e.owned, String(S.owned[i]));
+    const cant = S.annoyance < cost;
+    e.el.classList.toggle('cant', cant);
+    e.el.setAttribute('aria-disabled', cant);
+  });
+  $('bldEmpty').hidden = anyUnlocked;
+
+  // upgrades
+  renderProps();
+  let anyUpg = false;
+  UPGRADES.forEach(u => {
+    const el = upgEls[u.id];
+    const show = !hasUpg(u.id) && u.cond(S);
+    el.hidden = !show;
+    if (!show) return;
+    anyUpg = true;
+    const cant = S.annoyance < u.cost;
+    el.classList.toggle('cant', cant);
+    el.setAttribute('aria-disabled', cant);
+  });
+  $('upgEmpty').hidden = anyUpg;
+
+  // stats
+  setText($('stClicks'), S.clicks.toLocaleString('en-US'));
+  setText($('stLifetime'), fmt(S.lifetime));
+  setText($('stRun'), fmt(S.runEarned));
+  setText($('stTime'), fmtTime(S.timePlayed));
+  setText($('stHigh'), fmt(S.highestAps, true));
+  setText($('stOwned'), totalOwned(S).toLocaleString('en-US'));
+  setText($('stUpg'), `${Object.keys(S.upgrades).length} / ${UPGRADES.length}`);
+  setText($('stGold'), String(S.goldenClicks));
+  setText($('stPrestige'), String(S.prestiges));
+
+  // prestige
+  const gain = grudgeAvailable();
+  setText($('grudgeLine'), `Grudge: ${fmt(S.grudge)} (+${fmt(S.grudge * GRUDGE_BONUS * 100, true)}% Annoyance)`);
+  $('prestigeBar').style.width = Math.min(100, S.lifetime / PRESTIGE_REQ * 100) + '%';
+  if (S.lifetime < PRESTIGE_REQ) {
+    setText($('prestigeLabel'), `${fmt(S.lifetime)} / 1 billion lifetime Annoyance`);
+  } else {
+    const next = Math.pow(S.grudge + gain + 1, 3) * PRESTIGE_REQ;
+    setText($('prestigeLabel'), `Next Grudge point at ${fmt(next)} lifetime`);
+  }
+  const pb = $('prestigeBtn');
+  pb.disabled = gain < 1;
+  setText(pb, gain >= 1 ? `Serve the papers (+${fmt(gain)} Grudge)` : 'Serve the papers (locked)');
+
+  // amount toggle
+  document.querySelectorAll('#amtToggle button').forEach(b => b.classList.toggle('on', Number(b.dataset.amt) === S.buyAmt));
+}
+
+// ------------------------------------------------------------ game loop
+let lastTick = Date.now();
+function tick() {
+  const now = Date.now();
+  let dt = (now - lastTick) / 1000;
+  lastTick = now;
+  if (!(dt > 0)) dt = 0;
+  if (dt > OFFLINE_CAP_SEC) dt = OFFLINE_CAP_SEC;
+
+  const aps = getAps();
+  earn(aps * dt);
+  checkRain();
+  S.timePlayed += dt;
+  if (aps > S.highestAps) S.highestAps = aps;
+
+  if (!goldenEl && now >= nextGoldenAt) spawnGolden();
+  if (goldenEl && now >= goldenExpire) { hideGolden(false); scheduleGolden(); }
+
+  checkUnlocks();
+  checkAchievements();
+  render();
+}
+
+// -------------------------------------------------------------- egg rain
+const RAIN_EVERY = 100;      // a shower every 100 Annoyance earned...
+const RAIN_GAP_MS = 4000;    // ...but at most one shower per 4s once production gets big
+const RAIN_EGGS = 14;
+const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+let nextRainAt = 0, raining = false, lastRainEnd = 0;
+
+function checkRain() {
+  if (!nextRainAt) nextRainAt = (Math.floor(S.lifetime / RAIN_EVERY) + 1) * RAIN_EVERY;
+  if (S.lifetime < nextRainAt) return;
+  nextRainAt = (Math.floor(S.lifetime / RAIN_EVERY) + 1) * RAIN_EVERY;
+  if (raining || Date.now() - lastRainEnd < RAIN_GAP_MS || document.hidden) return;
+  eggRain();
+}
+
+function eggRain() {
+  S.flags.eggRain = true;
+  if (reducedMotion) return;
+  raining = true;
+  const layer = $('rainLayer');
+  for (let i = 0; i < RAIN_EGGS; i++) {
+    setTimeout(() => {
+      const x = rand(4, 96);
+      const hit = x > 27 && x < 73;   // over his head
+      const land = (15 + Math.abs(x - 50) * 0.45).toFixed(1) + '%';
+      const egg = document.createElement('span');
+      egg.className = 'rain-egg' + (hit ? '' : ' miss');
+      egg.textContent = '🥚';
+      egg.style.left = x + '%';
+      egg.style.setProperty('--dur', rand(0.7, 1.1).toFixed(2) + 's');
+      egg.style.setProperty('--spin', Math.round(rand(-360, 360)) + 'deg');
+      egg.style.setProperty('--land', land);
+      layer.appendChild(egg);
+      egg.addEventListener('animationend', () => {
+        egg.remove();
+        if (!hit) return;
+        const splat = document.createElement('span');
+        splat.className = 'egg-splat';
+        splat.textContent = '🍳';
+        splat.style.left = x + '%';
+        splat.style.top = land;
+        layer.appendChild(splat);
+        splat.addEventListener('animationend', () => splat.remove());
+        restartAnim($('char'), 'flinch');
+      });
+    }, i * 150);
+  }
+  setTimeout(() => { raining = false; lastRainEnd = Date.now(); }, RAIN_EGGS * 150 + 1200);
+  speechBubble(currentStage, pick(RAIN_LINES));
+}
+
+// ----------------------------------------------------------- force-feed
+const FEED = {
+  dosa: { emoji: '🫓', cooldown: 20, prop: 'propDosa', label: '🫓' },
+  egg:  { emoji: '🥚', cooldown: 30, prop: 'propEgg',  label: '🥚' },
+};
+const feedReadyAt = { dosa: 0, egg: 0 };
+let stuffTimer = 0;
+function feedMult(kind) {
+  let m = 1;
+  for (const u of UPGRADES) if (u.type === 'feed' && (u.target === kind || u.target === 'all') && hasUpg(u.id)) m *= u.mult;
+  return m;
+}
+function feedCooldown(kind) {
+  let cd = FEED[kind].cooldown;
+  for (const u of UPGRADES) if (u.type === 'feedSpeed' && u.target === kind && hasUpg(u.id)) cd *= u.factor;
+  return cd;
+}
+function feedReward(kind) {
+  const cp = clickPower(), aps = getAps();
+  const base = kind === 'dosa' ? Math.max(50, cp * 25 + aps * 10) : Math.max(150, cp * 15 + aps * 25);
+  return base * feedMult(kind);
+}
+function forceFeed(kind) {
+  const f = FEED[kind];
+  const prop = $(f.prop);
+  if (!hasUpg(kind)) return;
+  const now = Date.now();
+  if (now < feedReadyAt[kind]) { restartAnim(prop, 'nope'); return; }
+  feedReadyAt[kind] = now + feedCooldown(kind) * 1000;
+
+  const pr = prop.getBoundingClientRect(), cr = $('char').getBoundingClientRect();
+  const tx = cr.left + cr.width * 150 / 300, ty = cr.top + cr.height * 212 / 380;
+  const food = document.createElement('div');
+  food.className = 'flying-food';
+  food.textContent = f.emoji;
+  food.style.left = (pr.left + pr.width / 2) + 'px';
+  food.style.top = (pr.top + pr.height / 3) + 'px';
+  document.body.appendChild(food);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    food.style.left = tx + 'px';
+    food.style.top = ty + 'px';
+    food.style.transform = 'translate(-50%, -50%) scale(.5) rotate(540deg)';
+  }));
+  render();
+
+  setTimeout(() => {
+    food.remove();
+    const gain = feedReward(kind);
+    earn(gain);
+    S.fed[kind]++;
+    const ch = $('char');
+    ch.classList.remove('stuffed-dosa', 'stuffed-egg');
+    void ch.offsetWidth;
+    ch.classList.add('stuffed-' + kind);
+    clearTimeout(stuffTimer);
+    stuffTimer = setTimeout(() => ch.classList.remove('stuffed-dosa', 'stuffed-egg'), 1800);
+    floatNumber(tx, ty, '+' + fmt(gain), true);
+    speechBubble(currentStage, pick(FEED_LINES));
+    checkAchievements();
+    render();
+  }, 480);
+}
+function renderProps() {
+  const now = Date.now();
+  for (const kind of Object.keys(FEED)) {
+    const prop = $(FEED[kind].prop);
+    const owned = hasUpg(kind);
+    const wait = Math.ceil((feedReadyAt[kind] - now) / 1000);
+    prop.classList.toggle('locked', !owned);
+    prop.classList.toggle('cooling', owned && wait > 0);
+    prop.classList.toggle('ready', owned && wait <= 0);
+    setText(prop.querySelector('.prop-tag'), !owned ? `${FEED[kind].label} in shop` : wait > 0 ? `${FEED[kind].label} ${wait}s` : 'Force-feed! 👆');
+  }
+}
+
+// ----------------------------------------------------------- customizer
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = c => Math.max(0, Math.min(255, Math.round(c * (1 + amt))));
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(c => f(c).toString(16).padStart(2, '0')).join('');
+}
+function luminance(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+}
+function applyLook() {
+  const L = S.look, ch = $('char');
+  ch.style.setProperty('--skin', L.skin);
+  ch.style.setProperty('--hair', L.hairColor);
+  ch.style.setProperty('--shirt', L.shirt);
+  ch.style.setProperty('--shirt-dark', shade(L.shirt, -0.25));
+  ch.style.setProperty('--shirt-mid', shade(L.shirt, -0.12));
+  ch.querySelectorAll('[data-opt]').forEach(el => {
+    const show = el.dataset.opt.split(' ').some(t => { const [k, v] = t.split(':'); return String(L[k]) === v; });
+    el.style.display = show ? '' : 'none';
+  });
+  const t = $('shirtText');
+  t.textContent = L.shirtText;
+  t.style.fontSize = Math.max(9, Math.min(15, 190 / Math.max(1, L.shirtText.length))) + 'px';
+  t.style.fill = luminance(L.shirt) > 0.65 ? '#2b2141' : '#fff';
+}
+
+function buildCustomizer() {
+  const rows = $('czRows');
+  rows.innerHTML = '';
+  for (const [key, opt] of Object.entries(LOOK_OPTIONS)) {
+    const row = document.createElement('div');
+    row.className = 'cz-row';
+    const label = document.createElement('div');
+    label.className = 'cz-label';
+    label.textContent = opt.label;
+    const opts = document.createElement('div');
+    opts.className = 'cz-opts';
+    if (opt.type === 'color') {
+      opt.values.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'swatch';
+        b.style.background = c;
+        b.dataset.key = key;
+        b.dataset.val = c;
+        b.title = c;
+        b.setAttribute('aria-label', `${opt.label} ${c}`);
+        opts.appendChild(b);
+      });
+      const custom = document.createElement('input');
+      custom.type = 'color';
+      custom.className = 'swatch-custom';
+      custom.dataset.key = key;
+      custom.title = 'Pick any color';
+      custom.addEventListener('input', () => setLook(key, custom.value));
+      opts.appendChild(custom);
+    } else if (opt.type === 'choice') {
+      opt.values.forEach(([val, text]) => {
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.dataset.key = key;
+        b.dataset.val = val;
+        b.textContent = text;
+        opts.appendChild(b);
+      });
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'cz-text';
+      inp.maxLength = 16;
+      inp.dataset.key = key;
+      inp.addEventListener('input', () => setLook(key, inp.value.toUpperCase()));
+      opts.appendChild(inp);
+    }
+    row.append(label, opts);
+    rows.appendChild(row);
+  }
+  rows.addEventListener('click', e => {
+    const b = e.target.closest('button[data-key]');
+    if (b) setLook(b.dataset.key, b.dataset.val);
+  });
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const which = b.dataset.preset;
+    if (which === 'reference') S.look = { ...REFERENCE_LOOK, shirtText: S.look.shirtText };
+    else if (which === 'classic') S.look = { ...CLASSIC_LOOK, shirtText: S.look.shirtText };
+    else {
+      const look = { shirtText: S.look.shirtText };
+      for (const [k, opt] of Object.entries(LOOK_OPTIONS)) {
+        if (opt.type === 'color') look[k] = pick(opt.values);
+        else if (opt.type === 'choice') look[k] = pick(opt.values)[0];
+      }
+      S.look = look;
+    }
+    lookChanged();
+    restartAnim($('char'), 'flinch');
+  }));
+  refreshCustomizer();
+}
+function setLook(key, val) {
+  S.look[key] = val;
+  lookChanged();
+}
+function lookChanged() {
+  S.flags.customized = true;
+  applyLook();
+  refreshCustomizer();
+  checkAchievements();
+  save();
+}
+function refreshCustomizer() {
+  for (const [key, opt] of Object.entries(LOOK_OPTIONS)) {
+    const cur = S.look[key];
+    document.querySelectorAll(`#czRows button[data-key="${key}"]`).forEach(b => b.classList.toggle('on', b.dataset.val === cur));
+    if (opt.type === 'color') {
+      const custom = document.querySelector(`#czRows input[data-key="${key}"]`);
+      custom.value = cur;
+      custom.classList.toggle('on', !opt.values.includes(cur));
+    } else if (opt.type === 'text') {
+      const inp = document.querySelector(`#czRows input[data-key="${key}"]`);
+      if (document.activeElement !== inp) inp.value = cur;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- photo
+const PHOTO_KEY = 'annoyMyFriend.photo.v1';
+const CROP_W = 258, CROP_H = 276;   // on-screen cropper (same shape as the head)
+const OUT_W = 344, OUT_H = 368;     // stored image size
+
+function loadPhoto() {
+  try { return localStorage.getItem(PHOTO_KEY); } catch (e) { return null; }
+}
+function storePhoto(src) {
+  try {
+    if (src) localStorage.setItem(PHOTO_KEY, src); else localStorage.removeItem(PHOTO_KEY);
+    return true;
+  } catch (e) {
+    console.warn('Photo save failed', e);
+    return false;
+  }
+}
+function applyPhoto(src) {
+  const img = $('photoImg');
+  if (src) img.setAttribute('href', src); else img.removeAttribute('href');
+  $('char').classList.toggle('has-photo', !!src);
+  $('photoBtn').textContent = src ? '📷 Change photo' : '📷 Use a photo';
+  $('photoRemoveBtn').hidden = !src;
+  $('czPhotoNote').hidden = !src;
+}
+
+function openCropper(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => showCropper(img, url);
+  img.onerror = () => { URL.revokeObjectURL(url); toast('🚫', "Couldn't read that image", 'Try a JPG or PNG.'); };
+  img.src = url;
+}
+
+function showCropper(img, url) {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const base = Math.max(CROP_W / w, CROP_H / h);
+  let scale = base, ox = (CROP_W - w * scale) / 2, oy = (CROP_H - h * scale) / 2;
+
+  const m = modal({
+    title: '📷 Line up their face',
+    body: `<div class="crop-wrap">
+        <div class="crop-view"><div class="crop-guide" style="top:51%"><span>eyes</span></div><div class="crop-guide" style="top:83%"><span>mouth</span></div></div>
+        <label style="width:100%;font-weight:600;font-size:.9rem">Zoom <input type="range" class="crop-zoom" min="1" max="4" step="0.01" value="1"></label>
+        <div class="hint">Drag to move. The photo never leaves this device.</div>
+      </div>`,
+    buttons: [
+      { label: 'Cancel', cls: 'ghost' },
+      { label: 'Use photo', cls: 'purple', onClick: finish },
+    ],
+    onClose: () => URL.revokeObjectURL(url),
+  });
+  const view = m.querySelector('.crop-view');
+  const zoomEl = m.querySelector('.crop-zoom');
+  img.draggable = false;
+  img.alt = '';
+  view.prepend(img);
+
+  function clampAndDraw() {
+    ox = Math.min(0, Math.max(CROP_W - w * scale, ox));
+    oy = Math.min(0, Math.max(CROP_H - h * scale, oy));
+    img.style.width = (w * scale) + 'px';
+    img.style.height = (h * scale) + 'px';
+    img.style.left = ox + 'px';
+    img.style.top = oy + 'px';
+  }
+  function setZoom(z) {
+    const cx = (CROP_W / 2 - ox) / scale, cy = (CROP_H / 2 - oy) / scale;
+    scale = base * z;
+    ox = CROP_W / 2 - cx * scale;
+    oy = CROP_H / 2 - cy * scale;
+    clampAndDraw();
+  }
+  let drag = null;
+  view.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; view.setPointerCapture(e.pointerId); });
+  view.addEventListener('pointermove', e => {
+    if (!drag) return;
+    ox += e.clientX - drag.x; oy += e.clientY - drag.y;
+    drag = { x: e.clientX, y: e.clientY };
+    clampAndDraw();
+  });
+  const endDrag = () => { drag = null; };
+  view.addEventListener('pointerup', endDrag);
+  view.addEventListener('pointercancel', endDrag);
+  view.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoomEl.value = Math.min(4, Math.max(1, Number(zoomEl.value) - e.deltaY * 0.002));
+    setZoom(Number(zoomEl.value));
+  }, { passive: false });
+  zoomEl.addEventListener('input', () => setZoom(Number(zoomEl.value)));
+  clampAndDraw();
+
+  function finish() {
+    const k = OUT_W / CROP_W;
+    const canvas = document.createElement('canvas');
+    canvas.width = OUT_W;
+    canvas.height = OUT_H;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, OUT_W, OUT_H);
+    ctx.drawImage(img, ox * k, oy * k, w * scale * k, h * scale * k);
+    const data = canvas.toDataURL('image/jpeg', 0.85);
+    applyPhoto(data);
+    S.flags.photo = true;
+    checkAchievements();
+    if (storePhoto(data)) toast('📸', 'Looking good!', `${S.name} has never been more pokeable.`);
+    else toast('⚠️', 'Photo not saved', "Browser storage is full or blocked, so it'll disappear on refresh.");
+  }
+}
+
+// -------------------------------------------------------------- startup
+function applyOffline() {
+  const away = Math.min((Date.now() - S.lastSave) / 1000, OFFLINE_CAP_SEC);
+  if (!(away > 5)) return;
+  const rate = baseAps();
+  const gained = rate * away;
+  // frenzies don't keep running while you're away
+  if (S.frenzyEnd && S.frenzyEnd < Date.now()) S.frenzyEnd = 0;
+  if (!(gained > 0)) return;
+  earn(gained);
+  S.timePlayed += away;
+  S.flags.offline = true;
+  const capped = (Date.now() - S.lastSave) / 1000 > OFFLINE_CAP_SEC;
+  modal({
+    title: '📡 While you were gone…',
+    body: `You were away for <b>${esc(fmtTime(away))}</b>${capped ? ' (capped at 8h)' : ''}.<br><br>
+      Your Touches kept bugging ${esc(S.name)} the whole time. They turned a whole new shade of pink.<br><br>
+      You earned <b>+${esc(fmtLong(gained))} 😤 Annoyance</b>.`,
+    buttons: [{ label: 'Excellent 😈', cls: 'purple' }],
+  });
+}
+
+function init() {
+  const loaded = loadSave();
+  if (loaded) S = loaded;
+  buildShop();
+  updateNames();
+  buildCustomizer();
+  applyLook();
+  applyPhoto(loadPhoto());
+  if (loaded) applyOffline();
+  lastTick = Date.now();
+  scheduleGolden();
+  checkUnlocks();
+  checkAchievements();
+  render();
+  save();
+
+  $('char').addEventListener('click', poke);
+  $('renameBtn').addEventListener('click', rename);
+  document.querySelectorAll('[data-feed]').forEach(b => b.addEventListener('click', () => forceFeed(b.dataset.feed)));
+  $('photoBtn').addEventListener('click', () => $('photoInput').click());
+  $('photoInput').addEventListener('change', e => { openCropper(e.target.files[0]); e.target.value = ''; });
+  $('photoRemoveBtn').addEventListener('click', () => {
+    applyPhoto(null);
+    storePhoto(null);
+    toast('🖍️', 'Photo removed', 'Back to the cartoon version.');
+  });
+  $('prestigeBtn').addEventListener('click', confirmPrestige);
+  $('resetBtn').addEventListener('click', confirmReset);
+  $('saveBtn').addEventListener('click', () => { if (save()) toast('💾', 'Saved!', 'Your crimes are on record.'); });
+  $('amtToggle').addEventListener('click', e => {
+    const amt = Number(e.target.dataset && e.target.dataset.amt);
+    if ([1, 10, 100].includes(amt)) { S.buyAmt = amt; render(); }
+  });
+
+  setInterval(tick, 100);
+  setInterval(save, 10000);
+  window.addEventListener('beforeunload', save);
+  window.addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+}
+
+// small debug hook for testing in the console
+window.AnnoyGame = {
+  get state() { return S; },
+  save, spawnGolden, getAps, clickPower, unitCost, bulkCost, fmt, fmtLong,
+};
+
+init();
+})();
+</script>
+</body>
+</html>
